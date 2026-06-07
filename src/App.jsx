@@ -32,6 +32,16 @@ function hasTopic(data, topic) {
   return Object.prototype.hasOwnProperty.call(data, topic);
 }
 
+function isEditableElement(node) {
+  if (!node || !(node instanceof HTMLElement)) return false;
+  if (node.isContentEditable) return true;
+  const tagName = node.tagName;
+  if (tagName === 'TEXTAREA') return true;
+  if (tagName !== 'INPUT') return false;
+  const type = (node.getAttribute('type') || 'text').toLowerCase();
+  return type !== 'button' && type !== 'checkbox' && type !== 'radio' && type !== 'range';
+}
+
 export default function App({ robotAddress }) {
   const { nt4Provider } = useNt4();
   const [stage, setStage] = useState('checklist');
@@ -107,6 +117,17 @@ export default function App({ robotAddress }) {
 
     const getPressedTopic = (key) => `${KEYBINDS_ROOT}/${key}/pressed`;
 
+    const hasPressedTopicForKey = (key) => {
+      const topic = getPressedTopic(key);
+      return hasTopic(nt4Provider.topics, topic) || hasTopic(nt4Provider.topicValues, topic);
+    };
+
+    const isTypingContext = (event) => {
+      const target = event?.target;
+      if (isEditableElement(target)) return true;
+      return isEditableElement(document.activeElement);
+    };
+
     // Ignore keys that are purely modifiers or have no useful string name
     const isIgnoredKey = (key) =>
       !key ||
@@ -129,12 +150,14 @@ export default function App({ robotAddress }) {
       const key = normalizeKeybindName(event.key);
       if (isIgnoredKey(key)) return;
 
+      if (isTypingContext(event)) return;
+
+      const topic = getPressedTopic(key);
+      if (!hasPressedTopicForKey(key)) return;
+
       // Prevent browser/Electron default only for keys the robot is listening on
       // (avoids blocking Cmd+C, Cmd+V, etc. for normal usage)
-      const topic = getPressedTopic(key);
-      if (hasTopic(nt4Provider.topics, topic) || hasTopic(nt4Provider.topicValues, topic)) {
-        event.preventDefault();
-      }
+      event.preventDefault();
 
       if (heldKeybindsRef.current.has(key)) return;
 
@@ -146,6 +169,10 @@ export default function App({ robotAddress }) {
     const handleKeyUp = (event) => {
       const key = normalizeKeybindName(event.key);
       if (isIgnoredKey(key)) return;
+
+      if (isTypingContext(event)) return;
+
+      if (!hasPressedTopicForKey(key)) return;
 
       if (!heldKeybindsRef.current.has(key)) return;
 

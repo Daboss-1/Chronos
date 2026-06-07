@@ -451,14 +451,11 @@ export default function DeveloperDashboard() {
 
   const updateTunable = (tunable, nextValue) => {
     if (!nt4Provider || typeof nt4Provider.setValue !== 'function') return;
-    if (tunable.type !== 'boolean' && tunable.changed && !String(tunable.id).startsWith('system:')) return;
     nt4Provider.setValue(tunable.valueTopic, nextValue);
     nt4Provider.setValue(tunable.changedTopic, true);
   };
 
   const commitTunableDraft = (tunable) => {
-    if (tunable.changed && !String(tunable.id).startsWith('system:')) return;
-
     const draft = getDraftValue(tunable);
 
     if (tunable.type === 'number') {
@@ -684,16 +681,17 @@ export default function DeveloperDashboard() {
                   type="text"
                   inputMode="decimal"
                   value={getDraftValue(tunable)}
-                  disabled={tunable.changed}
+                  disabled={false}
                   style={{
                     ...tunableInputStyle,
-                    opacity: tunable.changed ? 0.7 : 1,
-                    cursor: tunable.changed ? 'not-allowed' : 'text'
+                    opacity: 1,
+                    cursor: 'text'
                   }}
                   onFocus={() => handleTunableFocus(tunable.id)}
                   onChange={(e) => setDraftValue(tunable, e.target.value)}
                   onBlur={() => handleTunableBlur(tunable)}
                   onKeyDown={(e) => {
+                    e.stopPropagation();
                     if (e.key === 'Enter') {
                       e.preventDefault();
                       commitTunableDraft(tunable);
@@ -705,16 +703,17 @@ export default function DeveloperDashboard() {
                 <input
                   type="text"
                   value={getDraftValue(tunable)}
-                  disabled={tunable.changed}
+                  disabled={false}
                   style={{
                     ...tunableInputStyle,
-                    opacity: tunable.changed ? 0.7 : 1,
-                    cursor: tunable.changed ? 'not-allowed' : 'text'
+                    opacity: 1,
+                    cursor: 'text'
                   }}
                   onFocus={() => handleTunableFocus(tunable.id)}
                   onChange={(e) => setDraftValue(tunable, e.target.value)}
                   onBlur={() => handleTunableBlur(tunable)}
                   onKeyDown={(e) => {
+                    e.stopPropagation();
                     if (e.key === 'Enter') {
                       e.preventDefault();
                       commitTunableDraft(tunable);
@@ -845,6 +844,7 @@ export default function DeveloperDashboard() {
                                   onChange={(e) => setDraftValue(scopedTunable, e.target.value)}
                                   onBlur={() => handleTunableBlur(scopedTunable)}
                                   onKeyDown={(e) => {
+                                    e.stopPropagation();
                                     if (e.key === 'Enter') {
                                       e.preventDefault();
                                       commitTunableDraft(scopedTunable);
@@ -862,6 +862,7 @@ export default function DeveloperDashboard() {
                                   onChange={(e) => setDraftValue(scopedTunable, e.target.value)}
                                   onBlur={() => handleTunableBlur(scopedTunable)}
                                   onKeyDown={(e) => {
+                                    e.stopPropagation();
                                     if (e.key === 'Enter') {
                                       e.preventDefault();
                                       commitTunableDraft(scopedTunable);

@@ -227,7 +227,9 @@ function createWindow() {
     if (intercepted.includes(input.key)) {
       // Prevent Electron defaults (e.g. F5 = reload, F12 = DevTools in dev)
       // but only in production; leave dev shortcuts intact for DevTools use.
-      if (!process.env.VITE_DEV_SERVER_URL) {
+      // Do NOT block Backspace/Delete default behavior so text editing keeps working.
+      const shouldBlockElectronDefault = input.key !== 'Backspace' && input.key !== 'Delete';
+      if (!process.env.VITE_DEV_SERVER_URL && shouldBlockElectronDefault) {
         event.preventDefault();
       }
       // Forward to renderer as a synthetic IPC key event so App.jsx sees it
