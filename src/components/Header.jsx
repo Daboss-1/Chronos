@@ -12,8 +12,8 @@ const LAYOUT_STAGES = ['teleop', 'autonomous'];
 
 export default function Header({ stage, activeTab, setActiveTab, autoRoutines, isRecording, onUploadLog, robotAddress }) {
   const [fmsInfo] = useEntry('/FMSInfo', { IsRedAlliance: false });
-  const [batteryVoltage] = useEntry('/NFRDashboard/battery/voltage', null);
-  const [akReady] = useEntry('/NFRDashboard/advantagescope/ready', false);
+  const [batteryVoltage] = useEntry('/ChronosDashboard/battery/voltage', null);
+  const [akReady] = useEntry('/ChronosDashboard/advantagescope/ready', false);
   const discoveredTabs = useDiscoveredTabs();
 
   const { theme, setTheme } = useTheme();

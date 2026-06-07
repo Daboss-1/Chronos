@@ -112,7 +112,7 @@ export default function LogReplayDashboard() {
         ) : (
           <div className="log-replay-no-tabs">
             <div style={{ marginBottom: 12, opacity: 0.45 }}><FolderIcon/></div>
-            <div>No NFRDashboard topics found in this log.</div>
+            <div>No ChronosDashboard topics found in this log.</div>
             <div style={{ fontSize: '0.82rem', opacity: 0.6, marginTop: 8 }}>
               This log may use a different topic namespace.
             </div>

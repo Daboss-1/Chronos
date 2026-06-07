@@ -2,10 +2,10 @@ import { useEffect, useRef, useState } from 'react';
 import { useNt4 } from '@frc-web-components/react/networktables';
 import { useI18n } from '../contexts/I18nContext';
 
-const STREAMS_ROOT = '/NFRDashboard/cameraStreams';
+const STREAMS_ROOT = '/ChronosDashboard/cameraStreams';
 
 /**
- * Discovers camera streams from NT under /NFRDashboard/cameraStreams/<tab>/<name>/url
+ * Discovers camera streams from NT under /ChronosDashboard/cameraStreams/<tab>/<name>/url
  * and returns an array of { tab, name, url }.
  */
 function useCameraStreams(nt4Provider, filterTab = null) {

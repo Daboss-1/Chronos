@@ -1,15 +1,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNt4 } from '@frc-web-components/react/networktables';
 
-const COMMAND_PREFIX = '/NFRDashboard/commands/';
-const TUNABLE_BOOLEAN_PREFIX = '/NFRDashboard/tunableBooleans/';
-const TUNABLE_NUMBER_PREFIX = '/NFRDashboard/tunableNumbers/';
-const TUNABLE_STRING_PREFIX = '/NFRDashboard/tunableStrings/';
-const VALUE_BOOLEAN_PREFIX = '/NFRDashboard/booleans/';
-const VALUE_NUMBER_PREFIX = '/NFRDashboard/numbers/';
-const VALUE_STRING_PREFIX = '/NFRDashboard/strings/';
-const SYSTEMS_PREFIX = '/NFRDashboard/systems/';
-const CAMERA_STREAM_PREFIX = '/NFRDashboard/cameraStreams/';
+const COMMAND_PREFIX = '/ChronosDashboard/commands/';
+const TUNABLE_BOOLEAN_PREFIX = '/ChronosDashboard/tunableBooleans/';
+const TUNABLE_NUMBER_PREFIX = '/ChronosDashboard/tunableNumbers/';
+const TUNABLE_STRING_PREFIX = '/ChronosDashboard/tunableStrings/';
+const VALUE_BOOLEAN_PREFIX = '/ChronosDashboard/booleans/';
+const VALUE_NUMBER_PREFIX = '/ChronosDashboard/numbers/';
+const VALUE_STRING_PREFIX = '/ChronosDashboard/strings/';
+const SYSTEMS_PREFIX = '/ChronosDashboard/systems/';
+const CAMERA_STREAM_PREFIX = '/ChronosDashboard/cameraStreams/';
 
 function getTopicKeys(data) {
   if (!data) return [];
@@ -20,16 +20,16 @@ function getTopicKeys(data) {
 }
 
 // Backend path format: /<table>/<section>/<tab>/<name>/<field>
-const COMMAND_FIELD_REGEX = /^\/NFRDashboard\/commands\/([^/]+)\/([^/]+)(?:\/(running|requestId|lastHandledRequestId|requested|tab))?$/;
-const TUNABLE_BOOLEAN_REGEX = /^\/NFRDashboard\/tunableBooleans\/([^/]+)\/([^/]+)\/(value|changed|tab)$/;
-const TUNABLE_NUMBER_REGEX = /^\/NFRDashboard\/tunableNumbers\/([^/]+)\/([^/]+)\/(value|changed|tab)$/;
-const TUNABLE_STRING_REGEX = /^\/NFRDashboard\/tunableStrings\/([^/]+)\/([^/]+)\/(value|changed|tab)$/;
-const VALUE_BOOLEAN_REGEX = /^\/NFRDashboard\/booleans\/([^/]+)\/([^/]+)\/value$/;
-const VALUE_NUMBER_REGEX = /^\/NFRDashboard\/numbers\/([^/]+)\/([^/]+)\/value$/;
-const VALUE_STRING_REGEX = /^\/NFRDashboard\/strings\/([^/]+)\/([^/]+)\/value$/;
-const SYSTEM_ROOT_REGEX = /^\/NFRDashboard\/systems\/([^/]+)\/(.+)$/;
-// Camera streams: /NFRDashboard/cameraStreams/<tab>/<name>/<url|tab|name>
-const CAMERA_STREAM_REGEX = /^\/NFRDashboard\/cameraStreams\/([^/]+)\/([^/]+)\/(url|tab|name)$/;
+const COMMAND_FIELD_REGEX = /^\/ChronosDashboard\/commands\/([^/]+)\/([^/]+)(?:\/(running|requestId|lastHandledRequestId|requested|tab))?$/;
+const TUNABLE_BOOLEAN_REGEX = /^\/ChronosDashboard\/tunableBooleans\/([^/]+)\/([^/]+)\/(value|changed|tab)$/;
+const TUNABLE_NUMBER_REGEX = /^\/ChronosDashboard\/tunableNumbers\/([^/]+)\/([^/]+)\/(value|changed|tab)$/;
+const TUNABLE_STRING_REGEX = /^\/ChronosDashboard\/tunableStrings\/([^/]+)\/([^/]+)\/(value|changed|tab)$/;
+const VALUE_BOOLEAN_REGEX = /^\/ChronosDashboard\/booleans\/([^/]+)\/([^/]+)\/value$/;
+const VALUE_NUMBER_REGEX = /^\/ChronosDashboard\/numbers\/([^/]+)\/([^/]+)\/value$/;
+const VALUE_STRING_REGEX = /^\/ChronosDashboard\/strings\/([^/]+)\/([^/]+)\/value$/;
+const SYSTEM_ROOT_REGEX = /^\/ChronosDashboard\/systems\/([^/]+)\/(.+)$/;
+// Camera streams: /ChronosDashboard/cameraStreams/<tab>/<name>/<url|tab|name>
+const CAMERA_STREAM_REGEX = /^\/ChronosDashboard\/cameraStreams\/([^/]+)\/([^/]+)\/(url|tab|name)$/;
 
 function toCommandList(topics, values) {
   const commands = new Map();
@@ -617,7 +617,7 @@ export default function DeveloperDashboard() {
 
       {commands.length === 0 ? (
         <div className="developer-empty">
-          Waiting for commands under <strong>/NFRDashboard/commands</strong>
+          Waiting for commands under <strong>/ChronosDashboard/commands</strong>
         </div>
       ) : (
         <div className="developer-command-grid">
@@ -642,9 +642,9 @@ export default function DeveloperDashboard() {
 
       {tunables.length === 0 ? (
         <div className="developer-empty">
-          Waiting for tunables under <strong>/NFRDashboard/tunableBooleans</strong>,{' '}
-          <strong>/NFRDashboard/tunableNumbers</strong>, and{' '}
-          <strong>/NFRDashboard/tunableStrings</strong>
+          Waiting for tunables under <strong>/ChronosDashboard/tunableBooleans</strong>,{' '}
+          <strong>/ChronosDashboard/tunableNumbers</strong>, and{' '}
+          <strong>/ChronosDashboard/tunableStrings</strong>
         </div>
       ) : (
         <div className="developer-command-grid">
@@ -734,8 +734,8 @@ export default function DeveloperDashboard() {
 
       {valuesList.length === 0 ? (
         <div className="developer-empty">
-          Waiting for values under <strong>/NFRDashboard/booleans</strong>,{' '}
-          <strong>/NFRDashboard/numbers</strong>, and <strong>/NFRDashboard/strings</strong>
+          Waiting for values under <strong>/ChronosDashboard/booleans</strong>,{' '}
+          <strong>/ChronosDashboard/numbers</strong>, and <strong>/ChronosDashboard/strings</strong>
         </div>
       ) : (
         <div className="developer-command-grid">
@@ -756,7 +756,7 @@ export default function DeveloperDashboard() {
 
       {systems.length === 0 ? (
         <div className="developer-empty">
-          Waiting for systems under <strong>/NFRDashboard/systems</strong>
+          Waiting for systems under <strong>/ChronosDashboard/systems</strong>
         </div>
       ) : (
         <div style={{ display: 'grid', gap: 12 }}>
@@ -903,7 +903,7 @@ export default function DeveloperDashboard() {
 
       {cameraStreams.length === 0 ? (
         <div className="developer-empty">
-          Waiting for camera streams under <strong>/NFRDashboard/cameraStreams</strong>
+          Waiting for camera streams under <strong>/ChronosDashboard/cameraStreams</strong>
         </div>
       ) : (
         <div className="developer-command-grid">

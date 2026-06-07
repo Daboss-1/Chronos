@@ -22,8 +22,6 @@ const store = new Store({
 // ── Constants ──────────────────────────────────────────────────────────────
 const NT4_PORT = 5810;
 const CANDIDATE_ADDRESSES = [
-  '10.1.72.2',
-  'roboRIO-172-FRC.local',
   'localhost',
   '127.0.0.1',
 ];
@@ -323,14 +321,6 @@ function buildMenu() {
           },
         },
         { type: 'separator' },
-        {
-          label: 'Connect: 10.1.72.2 (Field)',
-          click: () => ipcMain.emit('set-robot-address', null, null, '10.1.72.2'),
-        },
-        {
-          label: 'Connect: roboRIO-172-FRC.local',
-          click: () => ipcMain.emit('set-robot-address', null, null, 'roboRIO-172-FRC.local'),
-        },
         {
           label: 'Connect: localhost (Simulation)',
           click: () => ipcMain.emit('set-robot-address', null, null, 'localhost'),

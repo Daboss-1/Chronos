@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useNt4 } from '@frc-web-components/react/networktables';
 
-// Matches /NFRDashboard/<section>/<tab>/
-const TAB_REGEX = /^\/NFRDashboard\/(?:commands|numbers|strings|booleans|tunableNumbers|tunableStrings|tunableBooleans|cameraStreams|fields|robots)\/([^/]+)\//;
-// Matches /NFRDashboard/systems/<system>/<section>/<tab>/
-const SYSTEM_TAB_REGEX = /^\/NFRDashboard\/systems\/[^/]+\/(?:commands|numbers|strings|booleans|tunableNumbers|tunableStrings|tunableBooleans)\/([^/]+)\//;
+// Matches /ChronosDashboard/<section>/<tab>/
+const TAB_REGEX = /^\/ChronosDashboard\/(?:commands|numbers|strings|booleans|tunableNumbers|tunableStrings|tunableBooleans|cameraStreams|fields|robots)\/([^/]+)\//;
+// Matches /ChronosDashboard/systems/<system>/<section>/<tab>/
+const SYSTEM_TAB_REGEX = /^\/ChronosDashboard\/systems\/[^/]+\/(?:commands|numbers|strings|booleans|tunableNumbers|tunableStrings|tunableBooleans)\/([^/]+)\//;
 
 // These always appear in the tab bar regardless of NT; exclude from dynamic discovery
 const BUILTIN_TABS = new Set(['Match']);

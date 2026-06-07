@@ -1,7 +1,7 @@
 {
   "name": "chronos",
   "version": "1.0.0",
-  "description": "Chronos — Stage-based FRC Driver's Dashboard for Team 172",
+  "description": "Chronos — Stage-based FRC Driver Station Dashboard",
   "type": "module",
   "main": "electron/main.js",
   "scripts": {
@@ -12,7 +12,7 @@
     "preview": "vite preview"
   },
   "keywords": ["frc", "dashboard", "electron", "chronos"],
-  "author": "Team 172",
+  "author": "Chronos Contributors",
   "license": "MIT",
   "dependencies": {
     "@frc-web-components/fwc": "^3.4.0",
@@ -36,9 +36,9 @@
     "wait-on": "^8.0.3"
   },
   "build": {
-    "appId": "com.frc172.chronos",
+    "appId": "io.chronos.dashboard",
     "productName": "Chronos",
-    "copyright": "Copyright © 2025 Team 172",
+    "copyright": "Copyright © 2025 Chronos Contributors",
     "files": [
       "dist/**",
       "electron/**",

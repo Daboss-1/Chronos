@@ -164,7 +164,7 @@ export function encodeWpilog(log) {
   // ── File header ──
   bb.pushBytes(encode(WPILOG_MAGIC));
   bb.pushU16LE(WPILOG_VERSION);
-  const extraHeader = `NFRDashboard match recording; start=${new Date(log.startTimestamp).toISOString()}`;
+  const extraHeader = `Chronos match recording; start=${new Date(log.startTimestamp).toISOString()}`;
   const extraHeaderBytes = encode(extraHeader);
   bb.pushU32LE(extraHeaderBytes.byteLength);
   bb.pushBytes(extraHeaderBytes);

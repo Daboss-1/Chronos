@@ -3,7 +3,7 @@ import { useNt4 } from '@frc-web-components/react/networktables';
 import { useI18n } from '../contexts/I18nContext';
 import { IconCheck, IconWarning, IconX, IconQuestion } from '../utils/icons';
 
-const CHECKLIST_ROOT = '/NFRDashboard/checklist';
+const CHECKLIST_ROOT = '/ChronosDashboard/checklist';
 
 /**
  * Returns an array of checklist items discovered from NT.

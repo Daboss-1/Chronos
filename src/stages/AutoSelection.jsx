@@ -4,8 +4,8 @@ import { useNt4 } from '@frc-web-components/react/networktables';
 import FieldMap from '../components/FieldMap';
 import { loadAutoPathsFromAutoPath, computeBezierPoints, estimatePathDurationMs } from '../utils/pathLoader';
 
-const AUTO_COMMAND_PREFIX = '/NFRDashboard/autonomousCommands/Match/';
-const AUTO_TOPIC_ANY_REGEX = /^\/NFRDashboard\/autonomousCommands\/Match\/([^/]+)\/(.+)$/
+const AUTO_COMMAND_PREFIX = '/ChronosDashboard/autonomousCommands/Match/';
+const AUTO_TOPIC_ANY_REGEX = /^\/ChronosDashboard\/autonomousCommands\/Match\/([^/]+)\/(.+)$/
 
 function getTopicKeys(data) {
   if (!data) return [];
@@ -69,7 +69,7 @@ export default function AutoSelection({
   setAutoRoutines,
 }) {
   const [preSelected, setPreSelected] = useEntry('/Shuffleboard/Robot/Auto Selector/selected', 'Default');
-  const [, setSelectedAutonomous] = useEntry('/NFRDashboard/selectedAutonomous/Match', '');
+  const [, setSelectedAutonomous] = useEntry('/ChronosDashboard/selectedAutonomous/Match', '');
   const [pathSegments, setPathSegments] = useState([]);
   const [robotPose, setRobotPose] = useState(null);
   const animFrameRef = useRef(null);

@@ -18,7 +18,7 @@
  *       → string  selected auto name
  *
  * Additionally publishes an "AdvantageScope-ready" flag:
- *   /NFRDashboard/advantagescope/ready → boolean true while connected
+ *   /ChronosDashboard/advantagescope/ready → boolean true while connected
  *
  * The hook reads from existing NT topics (pose, FMS, auto) and republishes
  * them in the format AdvantageScope expects.
@@ -37,14 +37,14 @@ const MAX_HISTORY         = 500;  // number of pose frames to keep in trace
 const POSE_X_TOPIC   = '/Robot/Drive/PoseX';
 const POSE_Y_TOPIC   = '/Robot/Drive/PoseY';
 const POSE_HDG_TOPIC = '/Robot/Drive/PoseHeading';
-const AUTO_TOPIC     = '/NFRDashboard/selectedAutonomous/Match';
+const AUTO_TOPIC     = '/ChronosDashboard/selectedAutonomous/Match';
 
 // NT output topics (AdvantageScope convention)
 const AK_POSE         = '/AdvantageKit/RealOutputs/Drive/Pose';
 const AK_POSE_HISTORY = '/AdvantageKit/RealOutputs/Drive/PoseHistory';
 const AK_TIMESTAMP    = '/AdvantageKit/RealOutputs/Timestamp';
 const AK_AUTO         = '/AdvantageKit/RealOutputs/AutoRoutine';
-const AK_READY        = '/NFRDashboard/advantagescope/ready';
+const AK_READY        = '/ChronosDashboard/advantagescope/ready';
 
 export default function useAdvantageScope() {
   const { nt4Provider } = useNt4();

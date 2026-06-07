@@ -3,8 +3,8 @@
  * Pure NT topic parser shared by NTTabView (panel mode) and NTTabWidgetGrid (full mode).
  */
 
-export const NFR_ROOT     = '/NFRDashboard';
-export const SYS_ROOT     = '/NFRDashboard/systems';
+export const NFR_ROOT     = '/ChronosDashboard';
+export const SYS_ROOT     = '/ChronosDashboard/systems';
 export const KEYBINDS_TAB = 'Keybinds';
 
 export function getTopicKeys(data) {

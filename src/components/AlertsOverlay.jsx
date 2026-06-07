@@ -3,13 +3,13 @@ import { useNt4 } from '@frc-web-components/react/networktables';
 import { useI18n } from '../contexts/I18nContext';
 import { IconWarning, IconX, IconInfo } from '../utils/icons';
 
-const ALERTS_ROOT = '/NFRDashboard/alerts';
+const ALERTS_ROOT = '/ChronosDashboard/alerts';
 const AUTO_DISMISS_MS = 6000;
 
 let toastIdCounter = 0;
 
 /**
- * Monitors /NFRDashboard/alerts/<name>/ in NT.
+ * Monitors /ChronosDashboard/alerts/<name>/ in NT.
  * When `active` transitions false→true a toast is pushed.
  * Toasts auto-dismiss after AUTO_DISMISS_MS.
  */

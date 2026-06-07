@@ -2,7 +2,7 @@
  * sync-paths.js
  *
  * Connects to the NT4 server and watches for PathPlannerPath entries at:
- *   /NFRDashboard/autonomousCommands/Match/<autoName>/PathPlannerPath
+ *   /ChronosDashboard/autonomousCommands/Match/<autoName>/PathPlannerPath
  *
  * Each PathPlannerPath value is an absolute filesystem path to the .auto file
  * (e.g. from the robot simulator running locally). The paths directory is
@@ -38,8 +38,8 @@ const NT4_HOST = (() => {
 })();
 const NT4_PORT = 5810;
 
-const AUTO_NT4_PREFIX = '/NFRDashboard/autonomousCommands/Match/';
-const AUTO_PATH_REGEX = /^\/NFRDashboard\/autonomousCommands\/Match\/([^/]+)\/PathPlannerPath$/;
+const AUTO_NT4_PREFIX = '/ChronosDashboard/autonomousCommands/Match/';
+const AUTO_PATH_REGEX = /^\/ChronosDashboard\/autonomousCommands\/Match\/([^/]+)\/PathPlannerPath$/;
 
 /** How long (ms) to wait for NT4 data in one-shot mode before exiting. */
 const SYNC_TIMEOUT_MS = parseInt(process.env.SYNC_TIMEOUT || '3000', 10);

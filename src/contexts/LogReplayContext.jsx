@@ -16,8 +16,8 @@ import {
 const LogReplayContext = createContext(null);
 
 // ── Regex mirrors from useDiscoveredTabs ──────────────────────────────────────
-const TAB_RE = /^\/NFRDashboard\/(?:commands|numbers|strings|booleans|tunableNumbers|tunableStrings|tunableBooleans|cameraStreams|fields|robots)\/([^/]+)\//;
-const SYS_TAB_RE = /^\/NFRDashboard\/systems\/[^/]+\/(?:commands|numbers|strings|booleans|tunableNumbers|tunableStrings|tunableBooleans)\/([^/]+)\//;
+const TAB_RE = /^\/ChronosDashboard\/(?:commands|numbers|strings|booleans|tunableNumbers|tunableStrings|tunableBooleans|cameraStreams|fields|robots)\/([^/]+)\//;
+const SYS_TAB_RE = /^\/ChronosDashboard\/systems\/[^/]+\/(?:commands|numbers|strings|booleans|tunableNumbers|tunableStrings|tunableBooleans)\/([^/]+)\//;
 const BUILTIN_TABS = new Set(['Match']);
 
 /** Step-hold sample: returns the value at the last recorded sample ≤ t */

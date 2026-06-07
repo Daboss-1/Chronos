@@ -50,7 +50,7 @@ const NT_DEFAULT_LAYOUT = [
 
 // ── Persistence helpers ───────────────────────────────────────────────────────
 
-function layoutKey(tabName) { return `nfr-layout-nt-${tabName}`; }
+function layoutKey(tabName) { return `chronos-layout-nt-${tabName}`; }
 
 function loadLayout(tabName) {
   try {

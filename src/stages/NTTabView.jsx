@@ -208,7 +208,7 @@ export default function NTTabView({ tabName, layout = 'full', heldKeybindKeys = 
   if (!hasContent) {
     if (layout === 'panel') return null;
     const emptyMessage = tabName === KEYBINDS_TAB
-      ? 'Waiting for keybind entries under /NFRDashboard/commands/Keybinds'
+      ? 'Waiting for keybind entries under /ChronosDashboard/commands/Keybinds'
       : `No NT data for tab ${tabName} yet`;
     return (
       <section className="stage-container developer-dashboard">

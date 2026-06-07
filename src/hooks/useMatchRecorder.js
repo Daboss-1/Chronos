@@ -1,7 +1,7 @@
 /**
  * useMatchRecorder
  *
- * Records all /NFRDashboard/ and /Robot/ NT values at ~20 Hz during a match.
+ * Records all /ChronosDashboard/ and /Robot/ NT values at ~20 Hz during a match.
  * Produces a structured log object compatible with encodeWpilog().
  *
  * Usage:
@@ -20,7 +20,7 @@ import { useNt4 } from '@frc-web-components/react/networktables';
 const RECORD_INTERVAL_MS = 50;   // 20 Hz
 const MAX_SAVED           = 10;  // keep at most N logs in localStorage
 const STORAGE_KEY         = 'nfr-match-logs';
-const RECORD_PREFIXES     = ['/NFRDashboard/', '/Robot/', '/FMSInfo', '/Dashboard/'];
+const RECORD_PREFIXES     = ['/ChronosDashboard/', '/Robot/', '/FMSInfo', '/Dashboard/'];
 
 // NT type → wpilog type string
 function inferType(value) {

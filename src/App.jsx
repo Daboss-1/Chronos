@@ -17,8 +17,8 @@ import RewindBar from './components/RewindBar';
 import { LogReplayProvider } from './contexts/LogReplayContext';
 import LogReplayDashboard from './components/LogReplayDashboard';
 
-const KEYBINDS_ROOT = '/NFRDashboard/commands/Keybinds';
-const DASHBOARD_LIGHT_TOPIC = '/NFRDashboard/dashboardLight/color';
+const KEYBINDS_ROOT = '/ChronosDashboard/commands/Keybinds';
+const DASHBOARD_LIGHT_TOPIC = '/ChronosDashboard/dashboardLight/color';
 const HEX_COLOR_RE = /^#?[0-9a-fA-F]{6}([0-9a-fA-F]{2})?$/;
 
 function normalizeKeybindName(key) {

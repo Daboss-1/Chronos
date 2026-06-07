@@ -25,21 +25,21 @@ const DownloadIcon = () => <IconDownload size={13}/>;
 
 const POSE_X_KEYS = [
   '/Robot/Drive/PoseX',
-  '/NFRDashboard/replay/PoseX',
+  '/ChronosDashboard/replay/PoseX',
   '/SmartDashboard/PoseX',
   '/Odometry/X',
   'PoseX',
 ];
 const POSE_Y_KEYS = [
   '/Robot/Drive/PoseY',
-  '/NFRDashboard/replay/PoseY',
+  '/ChronosDashboard/replay/PoseY',
   '/SmartDashboard/PoseY',
   '/Odometry/Y',
   'PoseY',
 ];
 const POSE_HDG_KEYS = [
   '/Robot/Drive/PoseHeading',
-  '/NFRDashboard/replay/PoseHeading',
+  '/ChronosDashboard/replay/PoseHeading',
   '/SmartDashboard/PoseHeading',
   '/Odometry/Heading',
   'PoseHeading',
@@ -49,7 +49,7 @@ const POSE_ARRAY_KEYS = [
   '/AdvantageKit/RealOutputs/Drive/Pose',
   '/SmartDashboard/Field/Robot',
   '/Field/Robot',
-  '/NFRDashboard/replay/Pose',
+  '/ChronosDashboard/replay/Pose',
 ];
 
 // ── Helpers ────────────────────────────────────────────────────────────────

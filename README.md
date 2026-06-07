@@ -1,6 +1,8 @@
 # Chronos
 
-Chronos is the FRC Driver Station Dashboard for Team 172. It is a standalone macOS desktop application built with Electron and React that connects directly to the robot over NetworkTables 4 (NT4). It replaces the default Shuffleboard/SmartDashboard workflow with a structured, stage-driven match flow, real-time telemetry panels, keybind-based robot control, match recording, and offline log replay.
+Chronos is a standalone macOS desktop application for FRC teams. Built with Electron and React, it connects directly to your robot over NetworkTables 4 (NT4) and replaces the default Shuffleboard/SmartDashboard workflow with a structured, stage-driven match flow, real-time telemetry panels, keybind-based robot control, match recording, and offline log replay.
+
+Chronos works with any FRC team's robot — configure your robot's address in the settings panel and start driving.
 
 ---
 
@@ -46,7 +48,7 @@ Chronos is the FRC Driver Station Dashboard for Team 172. It is a standalone mac
 
 - WPILib 2025 or later
 - PathPlanner (for autonomous path preview and sync)
-- The `Dashboard.java` subsystem class from `frc.robot.lobby.subsystems.nfrdashboard`
+- The `Dashboard.java` subsystem class from the Chronos backend library
 
 ---
 
@@ -83,7 +85,7 @@ Double-click `Chronos.app` in `/Applications` or `release/mac-universal/`.
 
 On launch the app will:
 
-1. Auto-discover the robot by probing TCP port 5810 on each of the following addresses in order: `10.1.72.2`, `roboRIO-172-FRC.local`, `localhost`, `127.0.0.1`.
+1. Probe TCP port 5810 on `localhost` and `127.0.0.1` for a simulation. Enter your robot's address in the settings panel to connect to a real robot.
 2. Establish an NT4 WebSocket connection directly to the resolved address.
 3. Start the `sync-paths` background process, which watches NT for PathPlanner auto files and syncs them locally.
 4. Open the Checklist stage, which waits for the robot to publish its pre-match status.
@@ -117,12 +119,16 @@ This starts the Vite dev server on port 5173 and launches Electron pointed at it
 
 The resolved robot address is shown in the header as a small button. Click it to open the address panel.
 
-- **Connect** — enter any hostname or IP and press Connect (e.g., `10.1.72.2`, `roboRIO-172-FRC.local`, `192.168.1.50`). The setting is saved and persists across restarts.
-- **Auto-Discover** — clears the override and re-runs the probe sequence.
+- **Connect** — enter your robot's hostname or IP address and press Connect. Common formats:
+  - `10.TE.AM.2` (e.g. `10.1.72.2` for Team 172)
+  - `roboRIO-TEAM-FRC.local` (e.g. `roboRIO-172-FRC.local`)
+  - Any static IP or hostname on your network
+  The setting is saved and persists across restarts.
+- **Auto-Discover** — clears the override and re-runs the local probe sequence.
 
 The setting is also accessible from the **Robot** menu in the macOS menu bar.
 
-Simulation (WPILib `Simulation` mode) is automatically reached at `localhost` when no field robot is available.
+Simulation (WPILib `Simulation` mode) is automatically reached at `localhost` when no field robot is present.
 
 ---
 
@@ -153,7 +159,7 @@ The dashboard tabs in the header (Driver, Developer, SysId, etc.) are discovered
 The RewindBar at the bottom of the screen maintains a 3-minute rolling buffer of all NT values sampled at 20 Hz. Drag the scrubber left to go back in time. All panels reflect the historical values at the selected timestamp. Click "Live" to return to real-time.
 
 **Match recording**
-When Autonomous begins, Chronos starts recording all `/NFRDashboard/` and `/Robot/` NT topics at 20 Hz into a WPILog v1 binary file. Up to 10 recordings are kept in app storage.
+When Autonomous begins, Chronos starts recording all `/ChronosDashboard/` and `/Robot/` NT topics at 20 Hz into a WPILog v1 binary file. Up to 10 recordings are kept in app storage.
 
 **Log replay**
 In Post-Game, or from the header upload button, upload a `.wpilog` (robot recording) or `.json` (dashboard export) file. The log viewer provides a full scrubber, playback at 0.25x–4x speed, and a FieldMap-based pose replay. Log replay is also accessible from the Log View button in the header at any time.
@@ -182,14 +188,14 @@ Dark, light, and high-contrast themes are available from the theme button in the
 
 ### Setup
 
-`Dashboard` is a WPILib `SubsystemBase` singleton. Register it with the `CommandScheduler` by adding it to your robot container. Its `periodic()` method handles all NT writes and reads each robot loop iteration.
+`Dashboard` is a WPILib `SubsystemBase` singleton. Add it to your robot container — it registers itself with the `CommandScheduler` and its `periodic()` method handles all NT writes and reads each robot loop iteration.
 
 ```java
-// In RobotContainer or your container class constructor:
+// In your RobotContainer constructor:
 private final Dashboard dashboard = Dashboard.INSTANCE;
 
-// Register subsystem (required for periodic() to run)
-// Dashboard extends SubsystemBase, so CommandScheduler picks it up automatically.
+// Dashboard extends SubsystemBase, so the CommandScheduler picks it up automatically.
+// No explicit register() call is needed.
 ```
 
 Because `Dashboard.INSTANCE` is `static final`, it is safe to access from any class without passing a reference:
@@ -231,7 +237,7 @@ public Command getAutonomousCommand() {
 }
 ```
 
-The `sync-paths` process running inside Chronos watches NT for PathPlanner path references and copies `.auto` and `.path` files from the robot's deploy directory into the dashboard's local `public/` folder so the field preview renders offline during a match.
+The `sync-paths` process running inside Chronos watches NT for PathPlanner path references and copies `.auto` and `.path` files from the robot deploy directory into the dashboard's local `public/` folder so the field preview renders correctly without a live robot connection.
 
 ---
 
@@ -280,7 +286,7 @@ The key string must match the browser `KeyboardEvent.key` value, lowercased. Com
 | Enter | `"enter"` |
 | Backspace | `"backspace"` |
 
-Multiple keybinds can be active simultaneously. The robot reads each key's NT topic (`/NFRDashboard/commands/Keybinds/<key>/pressed`) independently every loop iteration, so holding `w`, `a`, and `arrowleft` at the same time works correctly.
+Multiple keybinds can be active simultaneously. The robot reads each key's NT topic (`/ChronosDashboard/commands/Keybinds/<key>/pressed`) independently every loop iteration, so holding `w`, `a`, and `arrowleft` at the same time works correctly.
 
 **Reading key state in periodic code:**
 
@@ -288,15 +294,15 @@ The `pressed` boolean is available directly over NT if you need to read it outsi
 
 ```java
 boolean wHeld = NetworkTableInstance.getDefault()
-    .getTable("/NFRDashboard/commands/Keybinds/w")
+    .getTable("/ChronosDashboard/commands/Keybinds/w")
     .getEntry("pressed")
     .getBoolean(false);
 ```
 
-The `LobbyOI` integration pattern uses `putKeybind` with `Commands.runOnce` to flip a double field that is then consumed by the drive default command, enabling full WASD control of the drivetrain from the dashboard keyboard:
+A common integration pattern uses `putKeybind` with `Commands.runOnce` to flip a double field that is then consumed by the drive default command, enabling full WASD keyboard control of the drivetrain:
 
 ```java
-// In LobbyContainer constructor:
+// In your container constructor:
 dashboard.putKeybind("w", "Drive forward",  Commands.runOnce(() -> wKey = 1), Commands.runOnce(() -> wKey = 0));
 dashboard.putKeybind("s", "Drive backward", Commands.runOnce(() -> sKey = 1), Commands.runOnce(() -> sKey = 0));
 dashboard.putKeybind("a", "Strafe left",    Commands.runOnce(() -> aKey = 1), Commands.runOnce(() -> aKey = 0));
@@ -304,11 +310,11 @@ dashboard.putKeybind("d", "Strafe right",   Commands.runOnce(() -> dKey = 1), Co
 dashboard.putKeybind("j", "Rotate left",    Commands.runOnce(() -> arrowLeft = 1),  Commands.runOnce(() -> arrowLeft = 0));
 dashboard.putKeybind("l", "Rotate right",   Commands.runOnce(() -> arrowRight = 1), Commands.runOnce(() -> arrowRight = 0));
 
-// In LobbyOI.bind():
+// In your OI bindings:
 drive.setDefaultCommand(drive.driveByJoystick(
-    () -> container.getDTrig() - container.getATrig(),
-    () -> container.getWTrig() - container.getSTrig(),
-    () -> container.getArrowLeft() - container.getArrowRight()
+    () -> dKey - aKey,
+    () -> wKey - sKey,
+    () -> arrowLeft - arrowRight
 ));
 ```
 
@@ -531,42 +537,42 @@ The dashboard writes the driver's autonomous selection back to NT. Read it from 
 return dashboard.getSelectedAutonomousCommand();
 ```
 
-This looks up the command registered under the name stored at `/NFRDashboard/selectedAutonomous/Match`. If the name does not match any registered command, `Commands.none()` is returned.
+This looks up the command registered under the name stored at `/ChronosDashboard/selectedAutonomous/Match`. If the name does not match any registered command, `Commands.none()` is returned.
 
 ---
 
 ## NT4 Topic Reference
 
-All topics are under the `/NFRDashboard` root unless noted.
+All topics are under the `/ChronosDashboard` root unless noted.
 
 | Topic | Type | Direction | Description |
 |---|---|---|---|
-| `/NFRDashboard/commands/<tab>/<name>/running` | boolean | Robot → Dashboard | Whether the command is currently scheduled |
-| `/NFRDashboard/commands/<tab>/<name>/requestId` | int | Dashboard → Robot | Incremented to toggle command |
-| `/NFRDashboard/commands/<tab>/<name>/lastHandledRequestId` | int | Robot → Dashboard | Last requestId the robot acted on |
-| `/NFRDashboard/commands/Keybinds/<key>/pressed` | boolean | Dashboard → Robot | True while the key is held |
-| `/NFRDashboard/commands/Keybinds/<key>/running` | boolean | Robot → Dashboard | True while the bound command is running |
-| `/NFRDashboard/numbers/<tab>/<name>/value` | double | Robot → Dashboard | Read-only number |
-| `/NFRDashboard/strings/<tab>/<name>/value` | string | Robot → Dashboard | Read-only string |
-| `/NFRDashboard/booleans/<tab>/<name>/value` | boolean | Robot → Dashboard | Read-only boolean |
-| `/NFRDashboard/tunableNumbers/<tab>/<name>/value` | double | Bidirectional | Current tunable value |
-| `/NFRDashboard/tunableNumbers/<tab>/<name>/changed` | boolean | Dashboard → Robot | Set true when driver submits a new value |
-| `/NFRDashboard/tunableBooleans/<tab>/<name>/value` | boolean | Bidirectional | Current tunable value |
-| `/NFRDashboard/tunableStrings/<tab>/<name>/value` | string | Bidirectional | Current tunable value |
-| `/NFRDashboard/autonomousCommands/Match/<name>/PathPlannerPath` | string | Robot → Dashboard | Absolute path to `.auto` file |
-| `/NFRDashboard/autonomousCommands/Match/<name>/ClassName` | string | Robot → Dashboard | Java class name of the command |
-| `/NFRDashboard/autonomousCommands/Match/<name>/Description` | string | Robot → Dashboard | Human-readable description |
-| `/NFRDashboard/selectedAutonomous/Match` | string | Bidirectional | Name of the selected auto routine |
-| `/NFRDashboard/cameraStreams/<tab>/<name>/url` | string | Robot → Dashboard | MJPEG stream URL |
-| `/NFRDashboard/checklist/<name>/status` | string | Robot → Dashboard | `ok`, `warn`, `error`, or `unknown` |
-| `/NFRDashboard/checklist/<name>/message` | string | Robot → Dashboard | Optional status message |
-| `/NFRDashboard/alerts/<name>/active` | boolean | Robot → Dashboard | Whether the alert is currently firing |
-| `/NFRDashboard/battery/voltage` | double | Robot → Dashboard | Battery voltage in volts |
-| `/NFRDashboard/dashboardLight/color` | string | Robot → Dashboard | Hex color string (e.g. `#0000ff`) |
-| `/NFRDashboard/systems/<system>/commands/<tab>/<name>/...` | — | Bidirectional | Same structure as commands, scoped to system |
-| `/NFRDashboard/robots/<tab>/<field>/<name>/x` | double | Robot → Dashboard | Robot pose X in meters |
-| `/NFRDashboard/robots/<tab>/<field>/<name>/y` | double | Robot → Dashboard | Robot pose Y in meters |
-| `/NFRDashboard/robots/<tab>/<field>/<name>/rotation` | double | Robot → Dashboard | Robot heading in degrees |
+| `/ChronosDashboard/commands/<tab>/<name>/running` | boolean | Robot → Dashboard | Whether the command is currently scheduled |
+| `/ChronosDashboard/commands/<tab>/<name>/requestId` | int | Dashboard → Robot | Incremented to toggle command |
+| `/ChronosDashboard/commands/<tab>/<name>/lastHandledRequestId` | int | Robot → Dashboard | Last requestId the robot acted on |
+| `/ChronosDashboard/commands/Keybinds/<key>/pressed` | boolean | Dashboard → Robot | True while the key is held |
+| `/ChronosDashboard/commands/Keybinds/<key>/running` | boolean | Robot → Dashboard | True while the bound command is running |
+| `/ChronosDashboard/numbers/<tab>/<name>/value` | double | Robot → Dashboard | Read-only number |
+| `/ChronosDashboard/strings/<tab>/<name>/value` | string | Robot → Dashboard | Read-only string |
+| `/ChronosDashboard/booleans/<tab>/<name>/value` | boolean | Robot → Dashboard | Read-only boolean |
+| `/ChronosDashboard/tunableNumbers/<tab>/<name>/value` | double | Bidirectional | Current tunable value |
+| `/ChronosDashboard/tunableNumbers/<tab>/<name>/changed` | boolean | Dashboard → Robot | Set true when driver submits a new value |
+| `/ChronosDashboard/tunableBooleans/<tab>/<name>/value` | boolean | Bidirectional | Current tunable value |
+| `/ChronosDashboard/tunableStrings/<tab>/<name>/value` | string | Bidirectional | Current tunable value |
+| `/ChronosDashboard/autonomousCommands/Match/<name>/PathPlannerPath` | string | Robot → Dashboard | Absolute path to `.auto` file |
+| `/ChronosDashboard/autonomousCommands/Match/<name>/ClassName` | string | Robot → Dashboard | Java class name of the command |
+| `/ChronosDashboard/autonomousCommands/Match/<name>/Description` | string | Robot → Dashboard | Human-readable description |
+| `/ChronosDashboard/selectedAutonomous/Match` | string | Bidirectional | Name of the selected auto routine |
+| `/ChronosDashboard/cameraStreams/<tab>/<name>/url` | string | Robot → Dashboard | MJPEG stream URL |
+| `/ChronosDashboard/checklist/<name>/status` | string | Robot → Dashboard | `ok`, `warn`, `error`, or `unknown` |
+| `/ChronosDashboard/checklist/<name>/message` | string | Robot → Dashboard | Optional status message |
+| `/ChronosDashboard/alerts/<name>/active` | boolean | Robot → Dashboard | Whether the alert is currently firing |
+| `/ChronosDashboard/battery/voltage` | double | Robot → Dashboard | Battery voltage in volts |
+| `/ChronosDashboard/dashboardLight/color` | string | Robot → Dashboard | Hex color string (e.g. `#0000ff`) |
+| `/ChronosDashboard/systems/<system>/commands/<tab>/<name>/...` | — | Bidirectional | Same structure as commands, scoped to system |
+| `/ChronosDashboard/robots/<tab>/<field>/<name>/x` | double | Robot → Dashboard | Robot pose X in meters |
+| `/ChronosDashboard/robots/<tab>/<field>/<name>/y` | double | Robot → Dashboard | Robot pose Y in meters |
+| `/ChronosDashboard/robots/<tab>/<field>/<name>/rotation` | double | Robot → Dashboard | Robot heading in degrees |
 
 ---
 
@@ -664,4 +670,4 @@ Output at `release/`:
 
 The app is built as a universal binary targeting both Apple Silicon (arm64) and Intel (x86-64) Macs.
 
-Code signing is not configured. To distribute outside the team, you will need an Apple Developer ID certificate and to add `afterSign` notarization hooks to `electron-builder` configuration in `package.json`.
+Code signing is not configured. To distribute your build, you will need an Apple Developer ID certificate and `afterSign` notarization hooks in the `electron-builder` configuration in `package.json`.
