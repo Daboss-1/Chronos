@@ -1,0 +1,85 @@
+{
+  "name": "chronos",
+  "version": "1.0.0",
+  "description": "Chronos — Stage-based FRC Driver's Dashboard for Team 172",
+  "type": "module",
+  "main": "electron/main.js",
+  "scripts": {
+    "dev": "concurrently -k -n VITE,ELECTRON -c cyan,magenta \"vite\" \"wait-on tcp:5173 && cross-env NODE_ENV=development electron .\"",
+    "build": "vite build",
+    "build:electron": "npm run build",
+    "dist:mac": "npm run build && electron-builder --mac",
+    "preview": "vite preview"
+  },
+  "keywords": ["frc", "dashboard", "electron", "chronos"],
+  "author": "Team 172",
+  "license": "MIT",
+  "dependencies": {
+    "@frc-web-components/fwc": "^3.4.0",
+    "@frc-web-components/react": "^2.1.2",
+    "electron-store": "^8.2.0",
+    "html2canvas": "^1.4.1",
+    "jspdf": "^2.5.1",
+    "lit": "^3.3.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-grid-layout": "^2.2.3"
+  },
+  "devDependencies": {
+    "@types/react-dom": "^18.2.19",
+    "@vitejs/plugin-react": "^4.2.1",
+    "concurrently": "^9.1.2",
+    "cross-env": "^7.0.3",
+    "electron": "^35.0.0",
+    "electron-builder": "^25.1.8",
+    "vite": "^5.1.4",
+    "wait-on": "^8.0.3"
+  },
+  "build": {
+    "appId": "com.frc172.chronos",
+    "productName": "Chronos",
+    "copyright": "Copyright © 2025 Team 172",
+    "files": [
+      "dist/**",
+      "electron/**",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "public",
+        "to": "public",
+        "filter": ["**/*"]
+      },
+      {
+        "from": "scripts",
+        "to": "scripts",
+        "filter": ["**/*"]
+      }
+    ],
+    "mac": {
+      "category": "public.app-category.utilities",
+      "target": [
+        {
+          "target": "dmg",
+          "arch": ["universal"]
+        },
+        {
+          "target": "dir",
+          "arch": ["universal"]
+        }
+      ],
+      "icon": "build/icon.icns"
+    },
+    "dmg": {
+      "title": "Chronos FRC Dashboard",
+      "contents": [
+        { "x": 130, "y": 220 },
+        { "x": 410, "y": 220, "type": "link", "path": "/Applications" }
+      ]
+    },
+    "directories": {
+      "buildResources": "build",
+      "output": "release"
+    }
+  }
+}

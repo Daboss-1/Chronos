@@ -1,0 +1,44 @@
+# Dependencies
+node_modules/
+
+# Vite build output
+dist/
+
+# Electron-builder output
+release/
+out/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# macOS
+.DS_Store
+*.DS_Store
+._*
+.Spotlight-V100
+.Trashes
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# electron-builder cache
+.electron-builder/
+
+# WPILog recordings saved by the app at runtime
+*.wpilog

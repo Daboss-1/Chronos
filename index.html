@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chronos | FRC Team 172 Dashboard</title>
+    <!-- CSP: allow localhost + robot addresses for NT4 WebSocket, MJPEG camera streams -->
+    <meta http-equiv="Content-Security-Policy"
+          content="default-src 'self' 'unsafe-inline' 'unsafe-eval' blob:; connect-src * ws: wss:; img-src * data: blob:; media-src * blob:;">
+</head>
+<body>
+    <div id="root"></div>
+    <script type="module" src="./src/main.jsx"></script>
+</body>
+</html>

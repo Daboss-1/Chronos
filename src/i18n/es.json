@@ -1,0 +1,114 @@
+{
+  "header": {
+    "team": "Equipo 172",
+    "robot": "Robot",
+    "editLayout": "Editar Diseño",
+    "doneEditing": "Listo",
+    "resetLayout": "Restablecer Diseño"
+  },
+  "stages": {
+    "checklist": "VERIFICACIÓN PREVIA",
+    "autoSelection": "SELECCIÓN AUTO",
+    "confirmation": "CONFIRMACIÓN",
+    "autonomous": "AUTÓNOMO",
+    "teleop": "TELEOPERADO",
+    "postGame": "POST-PARTIDO"
+  },
+  "checklist": {
+    "title": "Lista de Verificación Pre-Partido",
+    "subtitle": "Verificar todos los sistemas antes de continuar",
+    "allClear": "Todo Listo — Continuar",
+    "override": "Ignorar y Continuar de Todos Modos",
+    "itemsRemaining": "{{count}} elemento(s) no listos",
+    "status": {
+      "ok": "OK",
+      "warn": "AVISO",
+      "error": "ERROR",
+      "unknown": "DESCONOCIDO"
+    }
+  },
+  "autoSelection": {
+    "title": "Selección Autónoma",
+    "noAutos": "No hay autos PathPlanner disponibles",
+    "next": "Siguiente: Confirmar Información →",
+    "preview": "No hay vista previa disponible"
+  },
+  "confirmation": {
+    "title": "Confirmación de Partido",
+    "team": "Equipo",
+    "event": "Evento",
+    "match": "Partido",
+    "type": "Tipo",
+    "station": "Estación",
+    "alliance": "Alianza",
+    "battery": "Batería",
+    "selectedAuto": "Auto Seleccionado",
+    "fmsWaiting": "Esperando FMS",
+    "fmsStarting": "Partido FMS Iniciando...",
+    "backToAuto": "← Volver a Selección Auto",
+    "gameMessage": {
+      "redFirst": "Rojo Activo Primero",
+      "blueFirst": "Azul Activo Primero",
+      "awaiting": "Esperando FMS"
+    }
+  },
+  "autonomous": {
+    "title": "Autónomo",
+    "routine": "Rutina Auto",
+    "status": "Estado",
+    "matchControls": "Controles de Partido"
+  },
+  "teleop": {
+    "title": "Teleoperado",
+    "phase": "Fase del Partido",
+    "scoring": "Puntuación",
+    "balls": "Pelotas",
+    "hub": "Centro",
+    "hubActive": "ACTIVO",
+    "hubInactive": "INACTIVO",
+    "status": "Estado",
+    "matchControls": "Controles de Partido",
+    "cameras": "Cámaras",
+    "fullscreen": "Pantalla Completa",
+    "close": "Cerrar"
+  },
+  "postGame": {
+    "title": "Partido Terminado",
+    "totalPoints": "Puntos Totales",
+    "autoPoints": "Puntos Auto",
+    "teleopBalls": "Pelotas Teleop",
+    "teleopPoints": "Puntos Teleop",
+    "endGame": "Final del Partido",
+    "newMatch": "Iniciar Nuevo Partido"
+  },
+  "status": {
+    "shooter": "Lanzador",
+    "atSpeed": "A VELOCIDAD",
+    "spinningUp": "ACELERANDO",
+    "suzie": "Suzie",
+    "onTarget": "EN OBJETIVO",
+    "rotating": "ROTANDO",
+    "inRange": "EN RANGO",
+    "outOfRange": "FUERA DE RANGO"
+  },
+  "alliance": {
+    "red": "ALIANZA ROJA",
+    "blue": "ALIANZA AZUL"
+  },
+  "battery": {
+    "unknown": "--"
+  },
+  "alerts": {
+    "dismiss": "Descartar"
+  },
+  "theme": {
+    "dark": "Oscuro",
+    "light": "Claro",
+    "highContrast": "Alto Contraste"
+  },
+  "language": {
+    "en": "English",
+    "es": "Español",
+    "pt": "Português"
+  }
+}

@@ -1,0 +1,114 @@
+{
+  "header": {
+    "team": "Team 172",
+    "robot": "Robot",
+    "editLayout": "Edit Layout",
+    "doneEditing": "Done Editing",
+    "resetLayout": "Reset Layout"
+  },
+  "stages": {
+    "checklist": "PRE-MATCH CHECK",
+    "autoSelection": "AUTO SELECTION",
+    "confirmation": "CONFIRMATION",
+    "autonomous": "AUTONOMOUS",
+    "teleop": "TELEOPERATED",
+    "postGame": "POST-GAME"
+  },
+  "checklist": {
+    "title": "Pre-Match Checklist",
+    "subtitle": "Verify all systems before proceeding",
+    "allClear": "All Systems Go — Continue",
+    "override": "Override & Continue Anyway",
+    "itemsRemaining": "{{count}} item(s) not ready",
+    "status": {
+      "ok": "OK",
+      "warn": "WARN",
+      "error": "ERROR",
+      "unknown": "UNKNOWN"
+    }
+  },
+  "autoSelection": {
+    "title": "Autonomous Selection",
+    "noAutos": "No PathPlanner autos available",
+    "next": "Next: Confirm Information →",
+    "preview": "No map preview available"
+  },
+  "confirmation": {
+    "title": "Match Confirmation",
+    "team": "Team",
+    "event": "Event",
+    "match": "Match",
+    "type": "Type",
+    "station": "Station",
+    "alliance": "Alliance",
+    "battery": "Battery",
+    "selectedAuto": "Selected Auto",
+    "fmsWaiting": "Waiting for FMS",
+    "fmsStarting": "FMS Match Starting...",
+    "backToAuto": "← Back to Auto Selection",
+    "gameMessage": {
+      "redFirst": "Red Active First",
+      "blueFirst": "Blue Active First",
+      "awaiting": "Awaiting FMS"
+    }
+  },
+  "autonomous": {
+    "title": "Autonomous",
+    "routine": "Auto Routine",
+    "status": "Status",
+    "matchControls": "Match Controls"
+  },
+  "teleop": {
+    "title": "Teleoperated",
+    "phase": "Match Phase",
+    "scoring": "Scoring",
+    "balls": "Balls",
+    "hub": "Hub",
+    "hubActive": "ACTIVE",
+    "hubInactive": "INACTIVE",
+    "status": "Status",
+    "matchControls": "Match Controls",
+    "cameras": "Cameras",
+    "fullscreen": "Fullscreen",
+    "close": "Close"
+  },
+  "postGame": {
+    "title": "Match Complete",
+    "totalPoints": "Total Points",
+    "autoPoints": "Auto Points",
+    "teleopBalls": "Teleop Balls",
+    "teleopPoints": "Teleop Points",
+    "endGame": "End Game",
+    "newMatch": "Start New Match"
+  },
+  "status": {
+    "shooter": "Shooter",
+    "atSpeed": "AT SPEED",
+    "spinningUp": "SPINNING UP",
+    "suzie": "Suzie",
+    "onTarget": "ON TARGET",
+    "rotating": "ROTATING",
+    "inRange": "IN RANGE",
+    "outOfRange": "OUT OF RANGE"
+  },
+  "alliance": {
+    "red": "RED ALLIANCE",
+    "blue": "BLUE ALLIANCE"
+  },
+  "battery": {
+    "unknown": "--"
+  },
+  "alerts": {
+    "dismiss": "Dismiss"
+  },
+  "theme": {
+    "dark": "Dark",
+    "light": "Light",
+    "highContrast": "High Contrast"
+  },
+  "language": {
+    "en": "English",
+    "es": "Español",
+    "pt": "Português"
+  }
+}

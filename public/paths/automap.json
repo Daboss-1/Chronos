@@ -1,0 +1,69 @@
+{
+  "S1-DEPOT": [
+    "S1-D"
+  ],
+  "S2-DEPOT": [
+    "S2-D"
+  ],
+  "S1-SHOOT": [
+    "S1-NZL",
+    "NZL-NZM",
+    "NZM-SL",
+    "SL-NZL",
+    "NZL-NZM",
+    "NZMF-NZMC",
+    "NZMC-SL"
+  ],
+  "S1-SHOOT-BUMP": [
+    "S1-NZL",
+    "NZL-NZM",
+    "NZM-BL",
+    "BL-TL",
+    "TL-NZLC",
+    "NZLC-NZMC",
+    "NZMC-BL",
+    "BL-TL",
+    "TL-NZLC",
+    "NZLC-NZMC",
+    "NZMC-BL"
+  ],
+  "S3-SHOOT": [
+    "S3-NZR",
+    "NZR-NZM",
+    "NZM-SR",
+    "SR-NZR",
+    "NZR-NZM",
+    "NZMB-NZMC",
+    "NZMC-SR"
+  ],
+  "S1-SHOOT-DEPOT": [
+    "S1-NZL",
+    "NZL-NZM",
+    "NZM-SL",
+    "SL-D"
+  ],
+  "S1-CLIMB": [
+    "S1-C",
+    "PCL-CL"
+  ],
+  "S1-SHOOT-CLIMB": [
+    "S1-NZL",
+    "NZL-NZM",
+    "NZMF-NZMC",
+    "NZMC-SL",
+    "SL-CL"
+  ],
+  "S2-CLIMB": [
+    "S2-PCL",
+    "PCL-CL"
+  ],
+  "S2-DEPOT-CLIMB": [
+    "S2-D",
+    "D-PCL",
+    "PCL-CL"
+  ],
+  "S3-CLIMB": [
+    "S3-PCR",
+    "PCR-CR"
+  ]
+}
