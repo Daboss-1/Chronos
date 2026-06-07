@@ -1,8 +1,8 @@
 # Chronos
 
-Chronos is a standalone desktop application for FRC teams on macOS and Windows. Built with Electron and React, it connects directly to your robot over NetworkTables 4 (NT4) and replaces the default Shuffleboard/SmartDashboard workflow with a structured, stage-driven match flow, real-time telemetry panels, keybind-based robot control, match recording, and offline log replay.
+Chronos is a standalone desktop application for FRC teams on macOS and Windows. Built with Electron and React, it connects directly to your robot over NetworkTables 4 (NT4) and replaces the default Shuffleboard/SmartDashboard workflow with a structured, stage-driven match flow, real-time telemetry panels, keybind-based robot control, match recording, and offline log replay. Check out the vendordep backend here to start developing today: https://github.com/Daboss-1/ChronosBackend/
 
-Chronos works with any FRC team's robot — configure your robot's address in the settings panel and start driving.
+Chronos works with any FRC team's robot. Configure your robot's address in the settings panel and start driving.
 
 ---
 
