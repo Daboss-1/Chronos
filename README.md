@@ -1,6 +1,6 @@
 # Chronos
 
-Chronos is a standalone macOS desktop application for FRC teams. Built with Electron and React, it connects directly to your robot over NetworkTables 4 (NT4) and replaces the default Shuffleboard/SmartDashboard workflow with a structured, stage-driven match flow, real-time telemetry panels, keybind-based robot control, match recording, and offline log replay.
+Chronos is a standalone desktop application for FRC teams on macOS and Windows. Built with Electron and React, it connects directly to your robot over NetworkTables 4 (NT4) and replaces the default Shuffleboard/SmartDashboard workflow with a structured, stage-driven match flow, real-time telemetry panels, keybind-based robot control, match recording, and offline log replay.
 
 Chronos works with any FRC team's robot — configure your robot's address in the settings panel and start driving.
 
@@ -38,9 +38,10 @@ Chronos works with any FRC team's robot — configure your robot's address in th
 
 ## Requirements
 
-**Dashboard (macOS)**
+**Dashboard (Desktop)**
 
 - macOS 11 (Big Sur) or later, arm64 or x86-64
+- Windows 10 or later, x64
 - Node.js 20 or later (for building from source)
 - npm 10 or later
 
@@ -54,7 +55,7 @@ Chronos works with any FRC team's robot — configure your robot's address in th
 
 ## Installation
 
-### From the release DMG (recommended)
+### macOS (DMG)
 
 1. Open `Chronos-1.0.0-universal.dmg` from the `release/` directory.
 2. Drag `Chronos.app` to `/Applications`.
@@ -66,6 +67,12 @@ xattr -cr /Applications/Chronos.app
 
 4. Open Chronos from Finder or Spotlight.
 
+### Windows (`.exe`)
+
+1. Open `Chronos Setup 1.0.0.exe` from the `release/` directory and complete the installer.
+2. Optional: use the portable build (`Chronos 1.0.0.exe`) if you prefer no installation.
+3. Launch Chronos from the Start Menu (installed) or by double-clicking the portable executable.
+
 ### From source
 
 ```bash
@@ -75,13 +82,18 @@ npm install --legacy-peer-deps
 npm run dist:mac
 ```
 
-The built `.app` and `.dmg` will appear in `release/`.
+Use `npm run dist:win` instead to produce Windows `.exe` artifacts.
+
+Build artifacts are written to `release/`.
 
 ---
 
 ## Running the App
 
-Double-click `Chronos.app` in `/Applications` or `release/mac-universal/`.
+Launch Chronos from your packaged target:
+
+- **macOS**: double-click `Chronos.app` in `/Applications` or `release/mac-universal/`
+- **Windows**: run the installed Start Menu app, or open the portable `.exe` from `release/`
 
 On launch the app will:
 
@@ -90,7 +102,7 @@ On launch the app will:
 3. Start the `sync-paths` background process, which watches NT for PathPlanner auto files and syncs them locally.
 4. Open the Checklist stage, which waits for the robot to publish its pre-match status.
 
-No Terminal window is required. Everything runs inside the `.app`.
+No Terminal window is required. Everything runs inside the desktop app.
 
 ---
 
@@ -111,7 +123,10 @@ This starts the Vite dev server on port 5173 and launches Electron pointed at it
 |---|---|
 | `npm run dev` | Vite dev server + Electron with HMR and DevTools |
 | `npm run build` | Production Vite build to `dist/` |
+| `npm run build:electron` | Alias for production Vite build |
 | `npm run dist:mac` | Vite build then electron-builder universal macOS package |
+| `npm run dist:win` | Vite build then electron-builder Windows package (`.exe`) |
+| `npm run preview` | Preview built Vite output |
 
 ---
 
@@ -126,7 +141,7 @@ The resolved robot address is shown in the header as a small button. Click it to
   The setting is saved and persists across restarts.
 - **Auto-Discover** — clears the override and re-runs the local probe sequence.
 
-The setting is also accessible from the **Robot** menu in the macOS menu bar.
+The setting is also accessible from the **Robot** application menu.
 
 Simulation (WPILib `Simulation` mode) is automatically reached at `localhost` when no field robot is present.
 
@@ -642,8 +657,8 @@ Chronos/
 │   ├── field.png        # 2025 Reefscape field image
 │   ├── autos/           # PathPlanner .auto files (synced from robot)
 │   └── paths/           # PathPlanner .path files + automap.json (synced from robot)
-├── build/               # electron-builder resources (icon.icns)
-├── release/             # Packaged output (Chronos.app, Chronos.dmg)
+├── build/               # electron-builder resources (optional app icons)
+├── release/             # Packaged output (.app/.dmg on macOS, .exe on Windows)
 ├── index.html
 ├── vite.config.js
 └── package.json
@@ -652,6 +667,13 @@ Chronos/
 ---
 
 ## Build and Packaging
+
+Chronos can be packaged for both macOS and Windows using electron-builder.
+
+| Command | Description |
+|---|---|
+| `npm run dist:mac` | Build a macOS `.app` and `.dmg` into `release/` |
+| `npm run dist:win` | Build Windows `.exe` artifacts (NSIS installer and portable EXE) into `release/` |
 
 ```bash
 # Development (HMR + Electron)
@@ -662,12 +684,17 @@ npm run build
 
 # Full macOS package (builds Vite then runs electron-builder)
 npm run dist:mac
+
+# Full Windows package (builds Vite then runs electron-builder)
+npm run dist:win
 ```
 
-Output at `release/`:
-- `Chronos-1.0.0-universal.dmg` — installer for distribution
-- `mac-universal/Chronos.app` — app bundle for direct use
+Output at `release/` includes:
+- `Chronos-1.0.0-universal.dmg` and `mac-universal/Chronos.app` on macOS builds
+- `Chronos Setup 1.0.0.exe` (NSIS installer) and `Chronos 1.0.0.exe` (portable) on Windows builds
 
-The app is built as a universal binary targeting both Apple Silicon (arm64) and Intel (x86-64) Macs.
+The macOS package is built as a universal binary targeting both Apple Silicon (arm64) and Intel (x86-64) Macs.
 
-Code signing is not configured. To distribute your build, you will need an Apple Developer ID certificate and `afterSign` notarization hooks in the `electron-builder` configuration in `package.json`.
+Code signing is not configured. To distribute signed builds, configure platform signing in `electron-builder`:
+- macOS: Apple Developer ID certificate + notarization (`afterSign`)
+- Windows: Authenticode certificate

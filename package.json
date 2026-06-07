@@ -9,6 +9,7 @@
     "build": "vite build",
     "build:electron": "npm run build",
     "dist:mac": "npm run build && electron-builder --mac",
+    "dist:win": "npm run build && electron-builder --win",
     "preview": "vite preview"
   },
   "keywords": ["frc", "dashboard", "electron", "chronos"],
@@ -69,6 +70,26 @@
         }
       ],
       "icon": "build/icon.icns"
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
     },
     "dmg": {
       "title": "Chronos FRC Dashboard",
