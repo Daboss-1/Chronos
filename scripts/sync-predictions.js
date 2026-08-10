@@ -1,7 +1,7 @@
 var matchSchedule = [];
 var percentSyncComplete = 0;
 var syncIndex = 0;
-const BASE_API_URLS = [/*'https://api.statbotics.io/v3/', 'https://statbotics-production.up.railway.app'*/, 'https://api-statbotics.iterativerefinement.com/']
+const BASE_API_URLS = ['https://api.statbotics.io/v3/', 'https://api-statbotics.iterativerefinement.com/', 'https://statbotics-production.up.railway.app']
 async function getTeamEventKey(teamNumber) {
     var closestKey = null;
     var now = new Date().getTime();

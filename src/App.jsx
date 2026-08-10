@@ -25,6 +25,23 @@ const KEYBINDS_ROOT = '/ChronosDashboard/commands/Keybinds';
 const DASHBOARD_LIGHT_TOPIC = '/ChronosDashboard/dashboardLight/color';
 const HEX_COLOR_RE = /^#?[0-9a-fA-F]{6}([0-9a-fA-F]{2})?$/;
 const TEAM_NUMBER_STORAGE_KEY = 'chronos.teamNumber';
+const MATCH_SCHEDULE_STORAGE_KEY = 'chronos.matchSchedule';
+
+function readStoredMatchSchedule() {
+  try {
+    const raw = window.localStorage.getItem(MATCH_SCHEDULE_STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function persistMatchSchedule(scheduleRows) {
+  if (!Array.isArray(scheduleRows)) return;
+  window.localStorage.setItem(MATCH_SCHEDULE_STORAGE_KEY, JSON.stringify(scheduleRows));
+}
 
 function normalizeSyncProgress(rawValue) {
   const numeric = Number(rawValue);
@@ -70,6 +87,10 @@ function isEditableElement(node) {
 }
 
 export default function App({ robotAddress }) {
+  if (window.localStorage.getItem(TEAM_NUMBER_STORAGE_KEY) === null) {
+    window.localStorage.setItem(TEAM_NUMBER_STORAGE_KEY, '172');
+  }
+
   const { nt4Provider } = useNt4();
   const [stage, setStage] = useState('checklist');
   const [activeTab, setActiveTab] = useState('Match');
@@ -88,7 +109,7 @@ export default function App({ robotAddress }) {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [matchScheduleOpen, setMatchScheduleOpen] = useState(false);
-  const [scheduleRows, setScheduleRows] = useState([]);
+  const [scheduleRows, setScheduleRows] = useState(() => readStoredMatchSchedule());
   const [scheduleSyncing, setScheduleSyncing] = useState(false);
   const [scheduleSyncProgress, setScheduleSyncProgress] = useState(0);
   const [scheduleError, setScheduleError] = useState('');
@@ -140,7 +161,9 @@ export default function App({ robotAddress }) {
     if (document.activeElement instanceof HTMLElement) {
       document.activeElement.blur();
     }
-    setScheduleRows(Array.isArray(matchSchedule) ? [...matchSchedule] : []);
+    const cachedSchedule = readStoredMatchSchedule();
+    const latestSchedule = Array.isArray(matchSchedule) && matchSchedule.length > 0 ? [...matchSchedule] : cachedSchedule;
+    setScheduleRows(latestSchedule);
     setScheduleSyncProgress(normalizeSyncProgress(percentSyncComplete));
     setMatchScheduleOpen(true);
     setSidebarOpen(false);
@@ -165,7 +188,9 @@ export default function App({ robotAddress }) {
 
     try {
       await sync(window.localStorage.getItem(TEAM_NUMBER_STORAGE_KEY));
-      setScheduleRows(Array.isArray(matchSchedule) ? [...matchSchedule] : []);
+      const nextScheduleRows = Array.isArray(matchSchedule) ? [...matchSchedule] : [];
+      setScheduleRows(nextScheduleRows);
+      persistMatchSchedule(nextScheduleRows);
       setScheduleSyncProgress(normalizeSyncProgress(percentSyncComplete));
     } catch (error) {
       setScheduleError(error?.message || 'Failed to sync match schedule.');
@@ -200,6 +225,10 @@ export default function App({ robotAddress }) {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, [teamNumber, teamNumberDraft]);
+
+  useEffect(() => {
+    persistMatchSchedule(scheduleRows);
+  }, [scheduleRows]);
 
   useEffect(() => {
     if (!nt4Provider) return;
