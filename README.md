@@ -76,7 +76,7 @@ xattr -cr /Applications/Chronos.app
 ### From source
 
 ```bash
-git clone <repo-url>
+git clone https://github.com/Daboss-1/Chronos.git
 cd Chronos
 npm install --legacy-peer-deps
 npm run dist:mac

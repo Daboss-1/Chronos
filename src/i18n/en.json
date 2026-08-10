@@ -17,8 +17,8 @@
   "checklist": {
     "title": "Pre-Match Checklist",
     "subtitle": "Verify all systems before proceeding",
-    "allClear": "All Systems Go — Continue",
-    "override": "Override & Continue Anyway",
+    "allClear": "Continue",
+    "override": "Continue Anyway",
     "itemsRemaining": "{{count}} item(s) not ready",
     "status": {
       "ok": "OK",

@@ -56,7 +56,7 @@ function useChecklistItems(nt4Provider) {
   return items;
 }
 
-export default function Checklist({ goToStage }) {
+export default function Checklist({ goToStage, teamNumber }) {
   const { nt4Provider } = useNt4();
   const { t } = useI18n();
   const items = useChecklistItems(nt4Provider);
@@ -81,7 +81,6 @@ export default function Checklist({ goToStage }) {
       <div className="checklist-list">
         {items.length === 0 ? (
           <div className="checklist-empty">
-            <span className="checklist-item-icon status-unknown"><IconQuestion size={18}/></span>
             <span>No checklist items published by robot</span>
           </div>
         ) : (
@@ -96,9 +95,6 @@ export default function Checklist({ goToStage }) {
                   <span className="checklist-item-message">{item.message}</span>
                 )}
               </div>
-              <span className={`checklist-item-badge status-${item.status}`}>
-                {t(`checklist.status.${item.status}`)}
-              </span>
             </div>
           ))
         )}
@@ -112,18 +108,10 @@ export default function Checklist({ goToStage }) {
         )}
 
         <button
-          className="btn btn-primary btn-large"
-          onClick={() => goToStage('autoSelection')}
-          disabled={!allOk}
-        >
-          {t('checklist.allClear')}
-        </button>
-
-        <button
-          className="btn btn-danger btn-large"
+          className={`btn ${!allOk ? 'btn-danger' : 'btn-primary'} btn-large`}
           onClick={() => goToStage('autoSelection')}
         >
-          {t('checklist.override')}
+          {(!allOk ? t('checklist.override') : t('checklist.allClear'))}
         </button>
       </div>
     </div>

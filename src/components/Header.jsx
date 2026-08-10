@@ -1,20 +1,18 @@
 import { useRef, useState } from 'react';
 import { useEntry } from '@frc-web-components/react/networktables';
-import { useDiscoveredTabs } from '../hooks/useDiscoveredTabs';
 import { useTheme, THEMES } from '../contexts/ThemeContext';
 import { useI18n, LANGUAGES } from '../contexts/I18nContext';
 import { useLayout } from '../contexts/LayoutContext';
 import DownloadMenu from './DownloadMenu';
 import { parseUploadedLog } from '../utils/wpilog';
-import { IconMoon, IconSun, IconContrast, IconGlobe, IconSignal, IconReset, IconGrid, IconWarning } from '../utils/icons';
+import { IconMoon, IconSun, IconContrast, IconGlobe, IconSignal, IconReset, IconGrid, IconWarning, IconSettings, IconMenu } from '../utils/icons';
 
 const LAYOUT_STAGES = ['teleop', 'autonomous'];
 
-export default function Header({ stage, activeTab, setActiveTab, autoRoutines, isRecording, onUploadLog, robotAddress }) {
+export default function Header({ stage, activeTab, setActiveTab, autoRoutines, isRecording, onUploadLog, onOpenSettings, onToggleSidebar, robotAddress, discoveredTabs = [], matchTime = null }) {
   const [fmsInfo] = useEntry('/FMSInfo', { IsRedAlliance: false });
   const [batteryVoltage] = useEntry('/ChronosDashboard/battery/voltage', null);
   const [akReady] = useEntry('/ChronosDashboard/advantagescope/ready', false);
-  const discoveredTabs = useDiscoveredTabs();
 
   const { theme, setTheme } = useTheme();
   const { lang, changeLang, t } = useI18n();
@@ -93,7 +91,10 @@ export default function Header({ stage, activeTab, setActiveTab, autoRoutines, i
   const allianceClass = isRedAlliance ? 'alliance-red' : 'alliance-blue';
   const allianceText  = isRedAlliance ? t('alliance.red') : t('alliance.blue');
 
-  const allTabs = ['Match', ...discoveredTabs];
+  // Always include activeTab in the tab list so it stays highlighted even
+  // before discoveredTabs has caught up (prevents the "no active tab" flash).
+  const baseTabs = ['Match', ...discoveredTabs];
+  const allTabs = baseTabs.includes(activeTab) ? baseTabs : [...baseTabs, activeTab];
 
   const stageIndicator =
     activeTab === 'Match'
@@ -120,8 +121,12 @@ export default function Header({ stage, activeTab, setActiveTab, autoRoutines, i
 
       {/* ── Left: Chronos branding + alliance ── */}
       <div className="header-left">
-        <span className="header-team-name">Chronos</span>
-        <span className={`alliance-pill ${allianceClass}`}>{allianceText}</span>
+        {onToggleSidebar && (
+          <button className="header-icon-btn header-menu-btn" onClick={onToggleSidebar} title="Open menu" aria-label="Open menu">
+            <IconMenu size={16} />
+          </button>
+        )}
+        <span className="header-team-name">Chronos - {localStorage.getItem('chronos.teamNumber')}</span>
         {isRecording && (
           <span className="rec-badge" title="Match recording active">
             <span className="rec-dot" />
@@ -149,16 +154,18 @@ export default function Header({ stage, activeTab, setActiveTab, autoRoutines, i
             </button>
           ))}
         </div>
-        <span className="stage-pill">{stageIndicator}</span>
+        <div className="header-center-bottom">
+          <span className="stage-pill">{stageIndicator}</span>
+          {matchTime && (
+            <span className="header-match-timer">{matchTime}</span>
+          )}
+        </div>
       </div>
 
       {/* ── Right: status + utilities ── */}
       <div className="header-right">
 
         {/* Robot connection + battery — always visible */}
-        <div className={`header-robot-status ${connected ? 'connected' : 'disconnected'}`}>
-          <span className="header-status-dot" />
-          <span className="header-status-label">{t('header.robot')}</span>
           <div className={`battery-indicator ${batteryClass}`} aria-label={`Battery ${batteryText}`}>
             <span className="battery-icon" aria-hidden="true">
               <span className="battery-icon-body">
@@ -168,7 +175,6 @@ export default function Header({ stage, activeTab, setActiveTab, autoRoutines, i
             </span>
             <span className="battery-icon-text">{batteryText}</span>
           </div>
-        </div>
 
         {/* Separator */}
         <span className="header-sep" />
@@ -190,6 +196,12 @@ export default function Header({ stage, activeTab, setActiveTab, autoRoutines, i
         )}
 
         {/* Theme */}
+        {onOpenSettings && (
+          <button className="header-icon-btn header-settings-cog" onClick={onOpenSettings} title="Settings" aria-label="Settings">
+            <IconSettings size={15}/>
+          </button>
+        )}
+
         <div className="header-dropdown-wrapper" ref={themeRef}>
           <button className="header-icon-btn" onClick={handleThemeToggle} title="Theme" aria-expanded={themeOpen}>
             {theme === 'dark' ? <IconMoon size={15}/> : theme === 'light' ? <IconSun size={15}/> : <IconContrast size={15}/>}

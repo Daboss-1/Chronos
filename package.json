@@ -1,6 +1,6 @@
 {
   "name": "chronos",
-  "version": "1.0.0",
+  "version": "1.1.1",
   "description": "Chronos — Stage-based FRC Driver Station Dashboard",
   "type": "module",
   "main": "electron/main.js",
@@ -12,7 +12,12 @@
     "dist:win": "npm run build && electron-builder --win",
     "preview": "vite preview"
   },
-  "keywords": ["frc", "dashboard", "electron", "chronos"],
+  "keywords": [
+    "frc",
+    "dashboard",
+    "electron",
+    "chronos"
+  ],
   "author": "Chronos Contributors",
   "license": "MIT",
   "dependencies": {
@@ -24,7 +29,8 @@
     "lit": "^3.3.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "react-grid-layout": "^2.2.3"
+    "react-grid-layout": "^2.2.3",
+    "tba-api-v3client": "^3.3.1"
   },
   "devDependencies": {
     "@types/react-dom": "^18.2.19",
@@ -49,12 +55,16 @@
       {
         "from": "public",
         "to": "public",
-        "filter": ["**/*"]
+        "filter": [
+          "**/*"
+        ]
       },
       {
         "from": "scripts",
         "to": "scripts",
-        "filter": ["**/*"]
+        "filter": [
+          "**/*"
+        ]
       }
     ],
     "mac": {
@@ -62,11 +72,15 @@
       "target": [
         {
           "target": "dmg",
-          "arch": ["universal"]
+          "arch": [
+            "universal"
+          ]
         },
         {
           "target": "dir",
-          "arch": ["universal"]
+          "arch": [
+            "universal"
+          ]
         }
       ],
       "icon": "build/icon.icns"
@@ -94,8 +108,16 @@
     "dmg": {
       "title": "Chronos FRC Dashboard",
       "contents": [
-        { "x": 130, "y": 220 },
-        { "x": 410, "y": 220, "type": "link", "path": "/Applications" }
+        {
+          "x": 130,
+          "y": 220
+        },
+        {
+          "x": 410,
+          "y": 220,
+          "type": "link",
+          "path": "/Applications"
+        }
       ]
     },
     "directories": {
