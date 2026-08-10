@@ -795,6 +795,18 @@
   gap: var(--spacing-sm);
 }
 
+.schedule-modal-title-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.schedule-winloss-summary {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--color-text-secondary);
+}
+
 .schedule-modal-actions {
   display: inline-flex;
   align-items: center;
@@ -894,7 +906,14 @@
   justify-self: end;
   font-size: 0.86rem;
   font-weight: 800;
+}
+
+.schedule-item-prediction.win {
   color: var(--color-success);
+}
+
+.schedule-item-prediction.loss {
+  color: var(--color-danger);
 }
 
 .schedule-item-alliances {

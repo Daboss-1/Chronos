@@ -378,6 +378,9 @@ export default function App({ robotAddress }) {
         transition: 'background-color 120ms linear',
       };
 
+  const predictedWins = scheduleRows.filter((match) => typeof match?.prediction === 'number' && match.prediction >= 0.5).length;
+  const predictedLosses = scheduleRows.filter((match) => typeof match?.prediction === 'number' && match.prediction < 0.5).length;
+
   function renderStage() {
     // Non-Match tabs use the full widget-grid viewer.
     // During autonomous/teleop, keep those components mounted for their timer and FMS logic.
@@ -489,7 +492,10 @@ export default function App({ robotAddress }) {
         <div className="settings-modal-overlay" role="dialog" aria-modal="true" aria-label="Match schedule">
           <div className="schedule-modal-card">
             <div className="schedule-modal-header">
-              <h3 className="settings-modal-title">Match Schedule</h3>
+              <div className="schedule-modal-title-wrap">
+                <h3 className="settings-modal-title">Match Schedule</h3>
+                <span className="schedule-winloss-summary">Predicted W-L: {predictedWins}-{predictedLosses}</span>
+              </div>
               <div className="schedule-modal-actions">
                 <button
                   type="button"
@@ -530,7 +536,9 @@ export default function App({ robotAddress }) {
                     <div key={match.key} className="schedule-item">
                       <span className="schedule-item-match">Match {match.match_number}</span>
                       <span className="schedule-item-time">{match.predicted_day_time}</span>
-                      <span className="schedule-item-prediction">
+                      <span
+                        className={`schedule-item-prediction ${typeof match.prediction === 'number' && match.prediction < 0.5 ? 'loss' : 'win'}`}
+                      >
                         {typeof match.prediction === 'number' ? `${(match.prediction * 100).toFixed(1)}%` : '--'}
                       </span>
                       <div className="schedule-item-alliances">
