@@ -1,7 +1,8 @@
 var matchSchedule = [];
 var percentSyncComplete = 0;
 var syncIndex = 0;
-const BASE_API_URLS = ['https://api.statbotics.io/v3/', 'https://api-statbotics.iterativerefinement.com/', 'https://statbotics-production.up.railway.app']
+var nextMatch = null;
+const BASE_API_URLS = ['https://api.statbotics.io/v3', 'https://statbotics-production.up.railway.app/v3', 'https://api-statbotics.iterativerefinement.com/v3']
 async function getTeamEventKey(teamNumber) {
     var closestKey = null;
     var now = new Date().getTime();
@@ -41,6 +42,7 @@ async function getTeamEventMatchSchedule(teamNumber, eventKey) {
     })
         .then(response => response.json())
         .then(data => {
+            console.log(data)
             const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
             let teamMatches = data
                 .filter(match => match.alliances.red.team_keys.includes(`frc${teamNumber}`) || match.alliances.blue.team_keys.includes(`frc${teamNumber}`))
@@ -63,7 +65,7 @@ async function getWinPredictionForTeam(teamNumber, match, amtMatches) {
     let i = 0;
     let valid = false;
     while (!valid && i < BASE_API_URLS.length) {
-        await fetch(`${BASE_API_URLS[i]}/v3/match/${match.key}`, {
+        await fetch(`${BASE_API_URLS[i]}/match/${match.key}`, {
             method: 'GET'
         })
             .then(response => response.json())
@@ -86,28 +88,132 @@ async function getWinPredictionForTeam(teamNumber, match, amtMatches) {
 }
 
 async function sync(teamNumber) {
-    teamNumber = parseInt(teamNumber.replace(/\s/g, ''), 10);
+    teamNumber = parseInt(teamNumber.toString().replace(/\s/g, ''), 10);
     percentSyncComplete = 0;
     syncIndex = 0;
 
     const eventKey = await getTeamEventKey(teamNumber);
     if (!eventKey) {
         matchSchedule = [];
+        nextMatch = null;
         percentSyncComplete = 100;
         return;
     }
-    percentSyncComplete = 33;
+    percentSyncComplete = 100 / 3;
 
     const schedule = await getTeamEventMatchSchedule(teamNumber, eventKey);
-    percentSyncComplete = 66;
+    percentSyncComplete = 200 / 3;
 
     matchSchedule = await Promise.all(
         schedule.map(match => getWinPredictionForTeam(teamNumber, match, schedule.length))
     );
-
+    setNextMatch(matchSchedule);
+    console.log(nextMatch)
     if (schedule.length === 0) {
+        nextMatch = null;
+        percentSyncComplete = 100;
+    }
+    
+
+
+}
+
+async function predSync(teamNumber) {
+    if (matchSchedule.length == 0) {
+        await sync(teamNumber);
+    } else {
+        teamNumber = parseInt(teamNumber.toString().replace(/\s/g, ''), 10);
+        percentSyncComplete = 0;
+        syncIndex = 0;
+        percentSyncComplete = 200 / 3;
+        matchSchedule = await Promise.all(
+            matchSchedule.map(match => getWinPredictionForTeam(teamNumber, match, matchSchedule.length))
+        );
+        setNextMatch(matchSchedule);
+        if (matchSchedule.length === 0) {
+            nextMatch = null;
+            percentSyncComplete = 100;
+        }
+    }
+}
+
+async function timeSync(teamNumber) {
+    if (matchSchedule.length == 0) {
+        await sync(teamNumber);
+    } else {
+        teamNumber = parseInt(teamNumber.toString().replace(/\s/g, ''), 10);
+        percentSyncComplete = 0;
+        syncIndex = 0;
+        percentSyncComplete = 200 / 3;
+        const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        for (let i = 0; i < matchSchedule.length; i++) {
+            const response = await fetch(`https://www.thebluealliance.com/api/v3/match/${matchSchedule[i].key}`, {
+                method: 'GET',
+                headers: {
+                    'X-TBA-Auth-Key': 'KGSCksKxS2Z5m3DMlj0DaEjzW7hphTOnAkEhAzJj5lBDEiheTNB9Stw2akjIgGDX'
+                }
+            })
+            const responseJson = await response.json()
+            matchSchedule[i].predicted_day_time = new Date(responseJson.predicted_time * 1000).toLocaleString('en', timeZone)
+            matchSchedule[i].predicted_time = responseJson.predicted_time
+            percentSyncComplete = 200 / 3 + 100 / 3 * (i + 1) / matchSchedule.length;
+        }
+        setNextMatch(matchSchedule);
         percentSyncComplete = 100;
     }
 }
 
-export { sync, matchSchedule, percentSyncComplete };
+function setNextMatch(listMatches) {
+    const byTime = setNextMatchViaTime(listMatches);
+    if (byTime) {
+        nextMatch = byTime;
+        return nextMatch;
+    }
+
+    const byMatchNumber = setNextMatchViaMatchNumbers(listMatches);
+    nextMatch = byMatchNumber;
+    return nextMatch;
+}
+
+function setNextMatchViaMatchNumbers(listMatches) {
+    if (!Array.isArray(listMatches) || listMatches.length === 0) {
+        return null;
+    }
+
+    let candidate = null;
+    for (let i = 0; i < listMatches.length; i++) {
+        const match = listMatches[i];
+        if (match?.score_breakdown != null) {
+            continue;
+        }
+
+        if (candidate == null || match.match_number < candidate.match_number) {
+            candidate = match;
+        }
+    }
+
+    return candidate;
+
+}
+
+function setNextMatchViaTime(listMatches) {
+    if (!Array.isArray(listMatches) || listMatches.length === 0) {
+        nextMatch = null;
+        return nextMatch;
+    }
+
+    let now = new Date().getTime() / 1000;
+    nextMatch = null;
+    let closestPositiveDistance = Number.POSITIVE_INFINITY;
+    for (let i = 0; i < listMatches.length; i++) {
+        let distance = listMatches[i].predicted_time - now;
+        if (distance > 0 && distance < closestPositiveDistance) {
+            closestPositiveDistance = distance;
+            nextMatch = listMatches[i];
+        }
+    }
+
+    return nextMatch;
+}
+
+export { sync, predSync, timeSync, matchSchedule, percentSyncComplete, nextMatch };

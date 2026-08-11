@@ -19,13 +19,15 @@ import RewindBar from './components/RewindBar';
 import { LogReplayProvider } from './contexts/LogReplayContext';
 import LogReplayDashboard from './components/LogReplayDashboard';
 import { IconRefreshCw } from './utils/icons';
-import { sync, matchSchedule, percentSyncComplete } from '../scripts/sync-predictions';
+import { sync, predSync, timeSync, matchSchedule, percentSyncComplete, nextMatch } from '../scripts/sync-predictions';
 
 const KEYBINDS_ROOT = '/ChronosDashboard/commands/Keybinds';
 const DASHBOARD_LIGHT_TOPIC = '/ChronosDashboard/dashboardLight/color';
 const HEX_COLOR_RE = /^#?[0-9a-fA-F]{6}([0-9a-fA-F]{2})?$/;
 const TEAM_NUMBER_STORAGE_KEY = 'chronos.teamNumber';
 const MATCH_SCHEDULE_STORAGE_KEY = 'chronos.matchSchedule';
+const BACKGROUND_SYNC_ENABLED_STORAGE_KEY = 'chronos.backgroundScheduleSyncEnabled';
+const BACKGROUND_SYNC_MINUTES_STORAGE_KEY = 'chronos.backgroundScheduleSyncMinutes';
 
 function readStoredMatchSchedule() {
   try {
@@ -41,6 +43,18 @@ function readStoredMatchSchedule() {
 function persistMatchSchedule(scheduleRows) {
   if (!Array.isArray(scheduleRows)) return;
   window.localStorage.setItem(MATCH_SCHEDULE_STORAGE_KEY, JSON.stringify(scheduleRows));
+}
+
+function readStoredBackgroundSyncEnabled() {
+  const raw = window.localStorage.getItem(BACKGROUND_SYNC_ENABLED_STORAGE_KEY);
+  if (raw === null) return true;
+  return raw !== 'false';
+}
+
+function readStoredBackgroundSyncMinutes() {
+  const raw = window.localStorage.getItem(BACKGROUND_SYNC_MINUTES_STORAGE_KEY);
+  const parsed = Number.parseInt(raw || '', 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 2;
 }
 
 function normalizeSyncProgress(rawValue) {
@@ -63,6 +77,19 @@ function parseTeamNumbers(teamKeys) {
   return teamKeys
     .map((key) => Number.parseInt(String(key).replace(/^frc/i, '').trim(), 10))
     .filter((value) => Number.isFinite(value) && value > 0);
+}
+
+function formatCountdown(totalSeconds) {
+  const clamped = Math.max(0, Math.floor(totalSeconds));
+  const hours = Math.floor(clamped / 3600);
+  const minutes = Math.floor((clamped % 3600) / 60);
+  const seconds = clamped % 60;
+
+  if (hours > 0) {
+    return `${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+  }
+
+  return `${minutes}:${String(seconds).padStart(2, '0')}`;
 }
 
 function normalizeKeybindName(key) {
@@ -90,6 +117,12 @@ export default function App({ robotAddress }) {
   if (window.localStorage.getItem(TEAM_NUMBER_STORAGE_KEY) === null) {
     window.localStorage.setItem(TEAM_NUMBER_STORAGE_KEY, '172');
   }
+  if (window.localStorage.getItem(BACKGROUND_SYNC_ENABLED_STORAGE_KEY) === null) {
+    window.localStorage.setItem(BACKGROUND_SYNC_ENABLED_STORAGE_KEY, 'true');
+  }
+  if (window.localStorage.getItem(BACKGROUND_SYNC_MINUTES_STORAGE_KEY) === null) {
+    window.localStorage.setItem(BACKGROUND_SYNC_MINUTES_STORAGE_KEY, '2');
+  }
 
   const { nt4Provider } = useNt4();
   const [stage, setStage] = useState('checklist');
@@ -111,8 +144,16 @@ export default function App({ robotAddress }) {
   const [matchScheduleOpen, setMatchScheduleOpen] = useState(false);
   const [scheduleRows, setScheduleRows] = useState(() => readStoredMatchSchedule());
   const [scheduleSyncing, setScheduleSyncing] = useState(false);
+  const [scheduleSyncMenuOpen, setScheduleSyncMenuOpen] = useState(false);
   const [scheduleSyncProgress, setScheduleSyncProgress] = useState(0);
   const [scheduleError, setScheduleError] = useState('');
+  const [scheduleNextMatch, setScheduleNextMatch] = useState(nextMatch ?? null);
+  const [currentEpochMs, setCurrentEpochMs] = useState(() => Date.now());
+  const [backgroundSyncEnabled, setBackgroundSyncEnabled] = useState(() => readStoredBackgroundSyncEnabled());
+  const [backgroundSyncEnabledDraft, setBackgroundSyncEnabledDraft] = useState(() => backgroundSyncEnabled);
+  const [backgroundSyncMinutes, setBackgroundSyncMinutes] = useState(() => readStoredBackgroundSyncMinutes());
+  const [backgroundSyncMinutesDraft, setBackgroundSyncMinutesDraft] = useState(() => String(backgroundSyncMinutes));
+  const [backgroundSyncActive, setBackgroundSyncActive] = useState(false);
   const [teamNumber, setTeamNumber] = useState(() => {
     const raw = window.localStorage.getItem(TEAM_NUMBER_STORAGE_KEY);
     const parsed = Number.parseInt(raw || '', 10);
@@ -139,9 +180,19 @@ export default function App({ robotAddress }) {
   };
 
   const heldKeybindsRef = useRef(new Set());
+  const scheduleSyncMenuRef = useRef(null);
+  const runScheduleSyncRef = useRef(null);
 
   const persistTeamNumber = (value) => {
     window.localStorage.setItem(TEAM_NUMBER_STORAGE_KEY, String(value));
+  };
+
+  const persistBackgroundSyncEnabled = (value) => {
+    window.localStorage.setItem(BACKGROUND_SYNC_ENABLED_STORAGE_KEY, value ? 'true' : 'false');
+  };
+
+  const persistBackgroundSyncMinutes = (value) => {
+    window.localStorage.setItem(BACKGROUND_SYNC_MINUTES_STORAGE_KEY, String(value));
   };
 
   const normalizeTeamNumber = (value, fallback = 172) => {
@@ -150,8 +201,16 @@ export default function App({ robotAddress }) {
     return parsed;
   };
 
+  const normalizeBackgroundSyncMinutes = (value, fallback = 2) => {
+    const parsed = Number.parseInt(String(value), 10);
+    if (!Number.isFinite(parsed) || parsed <= 0) return fallback;
+    return Math.min(120, parsed);
+  };
+
   const openSettings = () => {
     setTeamNumberDraft(String(teamNumber));
+    setBackgroundSyncEnabledDraft(backgroundSyncEnabled);
+    setBackgroundSyncMinutesDraft(String(backgroundSyncMinutes));
     setSettingsOpen(true);
   };
 
@@ -164,71 +223,153 @@ export default function App({ robotAddress }) {
     const cachedSchedule = readStoredMatchSchedule();
     const latestSchedule = Array.isArray(matchSchedule) && matchSchedule.length > 0 ? [...matchSchedule] : cachedSchedule;
     setScheduleRows(latestSchedule);
+    setScheduleNextMatch(nextMatch ?? null);
     setScheduleSyncProgress(normalizeSyncProgress(percentSyncComplete));
+    setScheduleSyncMenuOpen(false);
     setMatchScheduleOpen(true);
     setSidebarOpen(false);
   };
 
   const closeMatchSchedule = () => {
     if (scheduleSyncing) return;
+    setScheduleSyncMenuOpen(false);
     setMatchScheduleOpen(false);
   };
 
-  const syncMatchSchedule = async () => {
+  const runScheduleSync = async (mode = 'quick', options = {}) => {
     if (scheduleSyncing) return;
+
+    const source = options.source || 'manual';
+    const isBackground = source === 'background';
 
     setScheduleError('');
     setScheduleSyncing(true);
+    setScheduleSyncMenuOpen(false);
+    setBackgroundSyncActive(isBackground);
     setScheduleSyncProgress(0);
+
+    const teamKey = window.localStorage.getItem(TEAM_NUMBER_STORAGE_KEY);
 
     const syncPoller = window.setInterval(() => {
       setScheduleSyncProgress(normalizeSyncProgress(percentSyncComplete));
       setScheduleRows(Array.isArray(matchSchedule) ? [...matchSchedule] : []);
+      setScheduleNextMatch(nextMatch ?? null);
     }, 120);
+    
 
     try {
-      await sync(window.localStorage.getItem(TEAM_NUMBER_STORAGE_KEY));
+      if (mode === 'full') {
+        await sync(teamKey);
+      } else if (mode === 'predictions') {
+        await predSync(teamKey);
+      } else if (mode === 'times') {
+        await timeSync(teamKey);
+      } else {
+        await predSync(teamKey);
+        await timeSync(teamKey);
+      }
+
       const nextScheduleRows = Array.isArray(matchSchedule) ? [...matchSchedule] : [];
       setScheduleRows(nextScheduleRows);
+      setScheduleNextMatch(nextMatch ?? null);
       persistMatchSchedule(nextScheduleRows);
       setScheduleSyncProgress(normalizeSyncProgress(percentSyncComplete));
     } catch (error) {
       setScheduleError(error?.message || 'Failed to sync match schedule.');
+      setScheduleNextMatch(nextMatch ?? null);
     } finally {
       window.clearInterval(syncPoller);
       setScheduleSyncing(false);
+      setBackgroundSyncActive(false);
+      setScheduleNextMatch(nextMatch ?? null);
       setScheduleSyncProgress(normalizeSyncProgress(percentSyncComplete));
     }
   };
 
+  runScheduleSyncRef.current = runScheduleSync;
+
   const closeSettings = () => {
     const normalized = normalizeTeamNumber(teamNumberDraft, teamNumber);
+    const normalizedBackgroundSyncMinutes = normalizeBackgroundSyncMinutes(backgroundSyncMinutesDraft, backgroundSyncMinutes);
     setTeamNumber(normalized);
     setTeamNumberDraft(String(normalized));
+    setBackgroundSyncEnabled(backgroundSyncEnabledDraft);
+    setBackgroundSyncMinutes(normalizedBackgroundSyncMinutes);
+    setBackgroundSyncMinutesDraft(String(normalizedBackgroundSyncMinutes));
     persistTeamNumber(normalized);
+    persistBackgroundSyncEnabled(backgroundSyncEnabledDraft);
+    persistBackgroundSyncMinutes(normalizedBackgroundSyncMinutes);
     setSettingsOpen(false);
   };
 
   useEffect(() => {
-    const flushTeamNumber = () => {
+    const flushSettings = () => {
       persistTeamNumber(normalizeTeamNumber(teamNumberDraft, teamNumber));
+      persistBackgroundSyncEnabled(backgroundSyncEnabledDraft);
+      persistBackgroundSyncMinutes(normalizeBackgroundSyncMinutes(backgroundSyncMinutesDraft, backgroundSyncMinutes));
     };
 
     const handleVisibilityChange = () => {
-      if (document.hidden) flushTeamNumber();
+      if (document.hidden) flushSettings();
     };
 
-    window.addEventListener('beforeunload', flushTeamNumber);
+    window.addEventListener('beforeunload', flushSettings);
     document.addEventListener('visibilitychange', handleVisibilityChange);
     return () => {
-      window.removeEventListener('beforeunload', flushTeamNumber);
+      window.removeEventListener('beforeunload', flushSettings);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, [teamNumber, teamNumberDraft]);
+  }, [backgroundSyncEnabledDraft, backgroundSyncMinutes, backgroundSyncMinutesDraft, teamNumber, teamNumberDraft]);
 
   useEffect(() => {
     persistMatchSchedule(scheduleRows);
   }, [scheduleRows]);
+
+  useEffect(() => {
+    if (!scheduleSyncMenuOpen) return;
+
+    const handlePointerDown = (event) => {
+      if (!scheduleSyncMenuRef.current?.contains(event.target)) {
+        setScheduleSyncMenuOpen(false);
+      }
+    };
+
+    const handleEscape = (event) => {
+      if (event.key === 'Escape') {
+        setScheduleSyncMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handlePointerDown);
+    document.addEventListener('keydown', handleEscape);
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown);
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [scheduleSyncMenuOpen]);
+
+  useEffect(() => {
+    if (!backgroundSyncEnabled) return;
+
+    const intervalMs = normalizeBackgroundSyncMinutes(backgroundSyncMinutes, 2) * 60 * 1000;
+    const intervalId = window.setInterval(() => {
+      runScheduleSyncRef.current?.('times', { source: 'background' });
+    }, intervalMs);
+
+    return () => {
+      window.clearInterval(intervalId);
+    };
+  }, [backgroundSyncEnabled, backgroundSyncMinutes]);
+
+  useEffect(() => {
+    const ticker = window.setInterval(() => {
+      setCurrentEpochMs(Date.now());
+    }, 1000);
+
+    return () => {
+      window.clearInterval(ticker);
+    };
+  }, []);
 
   useEffect(() => {
     if (!nt4Provider) return;
@@ -409,6 +550,25 @@ export default function App({ robotAddress }) {
 
   const predictedWins = scheduleRows.filter((match) => typeof match?.prediction === 'number' && match.prediction >= 0.5).length;
   const predictedLosses = scheduleRows.filter((match) => typeof match?.prediction === 'number' && match.prediction < 0.5).length;
+  const nowEpochSeconds = currentEpochMs / 1000;
+  const nextMatchNumber = Number.parseInt(String(scheduleNextMatch?.match_number ?? ''), 10);
+  const nextMatchKey = typeof scheduleNextMatch?.key === 'string' ? scheduleNextMatch.key : null;
+  const nextMatchIndex = nextMatchKey ? scheduleRows.findIndex((row) => row?.key === nextMatchKey) : -1;
+  const nextUpcomingMatch = scheduleRows.reduce((candidate, match) => {
+    const predictedTime = Number(match?.predicted_time);
+    if (!Number.isFinite(predictedTime) || predictedTime <= nowEpochSeconds) {
+      return candidate;
+    }
+
+    if (!candidate || predictedTime < Number(candidate.predicted_time)) {
+      return match;
+    }
+
+    return candidate;
+  }, null);
+  const secondsUntilNextMatch = nextUpcomingMatch
+    ? Math.max(0, Number(nextUpcomingMatch.predicted_time) - nowEpochSeconds)
+    : null;
 
   function renderStage() {
     // Non-Match tabs use the full widget-grid viewer.
@@ -513,6 +673,27 @@ export default function App({ robotAddress }) {
                 if (event.key === 'Enter') closeSettings();
               }}
             />
+            <label className="settings-modal-toggle" htmlFor="background-sync-toggle">
+              <input
+                id="background-sync-toggle"
+                type="checkbox"
+                checked={backgroundSyncEnabledDraft}
+                onChange={(event) => setBackgroundSyncEnabledDraft(event.target.checked)}
+              />
+              <span>Enable background schedule refresh</span>
+            </label>
+            <label className="settings-modal-label" htmlFor="background-sync-minutes-input">Minutes Between Refreshes</label>
+            <input
+              id="background-sync-minutes-input"
+              className="settings-modal-input"
+              type="number"
+              min="1"
+              max="120"
+              step="1"
+              value={backgroundSyncMinutesDraft}
+              onChange={(event) => setBackgroundSyncMinutesDraft(event.target.value)}
+              disabled={!backgroundSyncEnabledDraft}
+            />
             <button type="button" className="btn btn-primary" onClick={closeSettings}>Save</button>
           </div>
         </div>
@@ -525,17 +706,45 @@ export default function App({ robotAddress }) {
                 <h3 className="settings-modal-title">Match Schedule</h3>
                 <span className="schedule-winloss-summary">Predicted W-L: {predictedWins}-{predictedLosses}</span>
               </div>
-              <div className="schedule-modal-actions">
-                <button
-                  type="button"
-                  className="header-icon-btn schedule-sync-btn"
-                  title="Sync schedule"
-                  aria-label="Sync schedule"
-                  onClick={syncMatchSchedule}
-                  disabled={scheduleSyncing}
-                >
-                  <IconRefreshCw size={15} />
-                </button>
+              <div className="schedule-modal-actions" ref={scheduleSyncMenuRef}>
+                <div className="schedule-sync-group">
+                  <button
+                    type="button"
+                    className="schedule-sync-main-btn"
+                    title="Refresh schedule predictions and start times"
+                    aria-label="Refresh schedule predictions and start times"
+                    onClick={() => runScheduleSync('quick')}
+                    disabled={scheduleSyncing}
+                  >
+                    <IconRefreshCw size={15} />
+                    <span>Sync</span>
+                  </button>
+                  <button
+                    type="button"
+                    className="schedule-sync-menu-btn"
+                    title="More sync options"
+                    aria-label="More sync options"
+                    aria-haspopup="menu"
+                    aria-expanded={scheduleSyncMenuOpen}
+                    onClick={() => setScheduleSyncMenuOpen((open) => !open)}
+                    disabled={scheduleSyncing}
+                  >
+                    <span aria-hidden="true">▾</span>
+                  </button>
+                  {scheduleSyncMenuOpen && (
+                    <div className="schedule-sync-menu" role="menu">
+                      <button type="button" className="schedule-sync-menu-item" role="menuitem" onClick={() => runScheduleSync('full')}>
+                        Full schedule sync
+                      </button>
+                      <button type="button" className="schedule-sync-menu-item" role="menuitem" onClick={() => runScheduleSync('predictions')}>
+                        Refresh win predictions
+                      </button>
+                      <button type="button" className="schedule-sync-menu-item" role="menuitem" onClick={() => runScheduleSync('times')}>
+                        Refresh start times
+                      </button>
+                    </div>
+                  )}
+                </div>
                 <button type="button" className="schedule-close-btn" onClick={closeMatchSchedule} disabled={scheduleSyncing}>
                   &times;
                 </button>
@@ -544,8 +753,12 @@ export default function App({ robotAddress }) {
 
             <p className="schedule-sync-status">
               {scheduleSyncing
-                ? `Syncing ${Math.round(scheduleSyncProgress)}%`
-                : `Sync progress ${Math.round(scheduleSyncProgress)}%`}
+                ? backgroundSyncActive
+                  ? `Background refresh ${Math.round(scheduleSyncProgress)}%`
+                  : `Syncing ${Math.round(scheduleSyncProgress)}%`
+                : backgroundSyncEnabled
+                  ? `Background refresh every ${backgroundSyncMinutes} min`
+                  : `Background refresh off`}
             </p>
             <div className="schedule-sync-progress-track" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(scheduleSyncProgress)}>
               <div className="schedule-sync-progress-fill" style={{ width: `${scheduleSyncProgress}%` }} />
@@ -557,19 +770,35 @@ export default function App({ robotAddress }) {
               {scheduleRows.length === 0 ? (
                 <div className="schedule-empty">No matches loaded yet. Press sync.</div>
               ) : (
-                scheduleRows.map((match) => {
+                scheduleRows.map((match, matchIndex) => {
                   const redTeams = parseTeamNumbers(match?.alliances?.red?.team_keys);
                   const blueTeams = parseTeamNumbers(match?.alliances?.blue?.team_keys);
+                  const currentMatchNumber = Number.parseInt(String(match?.match_number ?? ''), 10);
+                  const predictedTime = Number(match?.predicted_time);
+                  const matchOccurred = Number.isFinite(predictedTime)
+                    ? predictedTime <= nowEpochSeconds
+                    : scheduleNextMatch == null
+                      ? true
+                      : Number.isFinite(nextMatchNumber) && Number.isFinite(currentMatchNumber)
+                        ? currentMatchNumber < nextMatchNumber
+                        : nextMatchIndex >= 0
+                          ? matchIndex < nextMatchIndex
+                          : false;
 
                   return (
                     <div key={match.key} className="schedule-item">
-                      <span className="schedule-item-match">Match {match.match_number}</span>
+                      <div className="schedule-item-top">
+                        <div className="schedule-item-match-wrap">
+                          <span className="schedule-item-match">Match {match.match_number}</span>
+                          {matchOccurred && <span className="schedule-item-status occurred">Occurred</span>}
+                        </div>
+                        <span
+                          className={`schedule-item-prediction ${typeof match.prediction === 'number' && match.prediction < 0.5 ? 'loss' : 'win'}`}
+                        >
+                          {typeof match.prediction === 'number' ? `${(match.prediction * 100).toFixed(1)}%` : '--'}
+                        </span>
+                      </div>
                       <span className="schedule-item-time">{match.predicted_day_time}</span>
-                      <span
-                        className={`schedule-item-prediction ${typeof match.prediction === 'number' && match.prediction < 0.5 ? 'loss' : 'win'}`}
-                      >
-                        {typeof match.prediction === 'number' ? `${(match.prediction * 100).toFixed(1)}%` : '--'}
-                      </span>
                       <div className="schedule-item-alliances">
                         <div className="schedule-item-alliance schedule-item-alliance-red">
                           <span className="schedule-item-alliance-label">Red</span>
@@ -604,6 +833,27 @@ export default function App({ robotAddress }) {
               )}
             </div>
           </div>
+        </div>
+      )}
+      {backgroundSyncActive && (
+        <div className="background-sync-indicator" role="status" aria-live="polite">
+          <IconRefreshCw size={14} />
+          <span>Refreshing match times {Math.round(scheduleSyncProgress)}%</span>
+        </div>
+      )}
+      {scheduleRows.length > 0 && (
+        <div className="next-match-countdown" role="status" aria-live="polite">
+          {nextUpcomingMatch ? (
+            <>
+              <span className="next-match-countdown-label">Match {nextUpcomingMatch.match_number} starts in</span>
+              <span className="next-match-countdown-value">{formatCountdown(secondsUntilNextMatch)}</span>
+            </>
+          ) : (
+            <>
+              <span className="next-match-countdown-label">Match schedule</span>
+              <span className="next-match-countdown-value">No upcoming matches</span>
+            </>
+          )}
         </div>
       )}
       <DownloadMenu autoRoutines={autoRoutines} currentLog={currentLog} />
