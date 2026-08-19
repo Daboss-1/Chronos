@@ -1,6 +1,6 @@
 {
   "name": "chronos",
-  "version": "1.3.5",
+  "version": "1.5.5",
   "description": "Chronos — Stage-based FRC Driver Station Dashboard",
   "type": "module",
   "main": "electron/main.js",

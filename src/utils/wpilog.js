@@ -497,7 +497,7 @@ export function downloadWpilog(log) {
   const a     = document.createElement('a');
   const ts    = new Date(log.startTimestamp).toISOString().replace(/[:.]/g, '-').slice(0, 19);
   a.href      = url;
-  a.download  = `NFR_Match_${ts}.wpilog`;
+  a.download  = `FRC_Match_${ts}.wpilog`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);

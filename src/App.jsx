@@ -10,6 +10,7 @@ import Checklist from './stages/Checklist';
 import NTTabView from './stages/NTTabView';
 import NTTabWidgetGrid from './components/NTTabWidgetGrid';
 import DownloadMenu from './components/DownloadMenu';
+import MatchPreviewMenu from './components/MatchPreviewMenu';
 import AlertsOverlay from './components/AlertsOverlay';
 import useMatchRecorder from './hooks/useMatchRecorder';
 import useAdvantageScope from './hooks/useAdvantageScope';
@@ -19,7 +20,7 @@ import RewindBar from './components/RewindBar';
 import { LogReplayProvider } from './contexts/LogReplayContext';
 import LogReplayDashboard from './components/LogReplayDashboard';
 import { IconRefreshCw } from './utils/icons';
-import { sync, predSync, timeSync, matchSchedule, percentSyncComplete, nextMatch } from '../scripts/sync-predictions';
+import { sync, generatePreMatchBrief, matchSchedule, percentSyncComplete, nextMatch } from '../scripts/sync-predictions';
 
 const KEYBINDS_ROOT = '/ChronosDashboard/commands/Keybinds';
 const DASHBOARD_LIGHT_TOPIC = '/ChronosDashboard/dashboardLight/color';
@@ -92,6 +93,48 @@ function formatCountdown(totalSeconds) {
   return `${minutes}:${String(seconds).padStart(2, '0')}`;
 }
 
+function getMatchWinProbability(match, teamNumber) {
+  const redWinProb = Number(match?.pred?.red_win_prob);
+  if (!Number.isFinite(redWinProb)) return null;
+
+  const redTeams = match?.alliances?.red?.team_keys;
+  const blueTeams = match?.alliances?.blue?.team_keys;
+  const normalizeTeamValue = (value) => {
+    if (typeof value === 'number') {
+      return Number.isFinite(value) ? value : null;
+    }
+    const parsed = Number.parseInt(String(value).replace(/^frc/i, '').trim(), 10);
+    return Number.isFinite(parsed) ? parsed : null;
+  };
+
+  const targetTeam = normalizeTeamValue(teamNumber);
+  if (!Number.isFinite(targetTeam)) return null;
+
+  const redHasTeam = Array.isArray(redTeams) && redTeams.some((value) => normalizeTeamValue(value) === targetTeam);
+  const blueHasTeam = Array.isArray(blueTeams) && blueTeams.some((value) => normalizeTeamValue(value) === targetTeam);
+
+  if (redHasTeam) {
+    return redWinProb;
+  }
+  if (blueHasTeam) {
+    return 1 - redWinProb;
+  }
+
+  return null;
+}
+
+function formatPredictedDayTime(epochSeconds) {
+  const numeric = Number(epochSeconds);
+  if (!Number.isFinite(numeric) || numeric <= 0) return '--';
+
+  const date = new Date(numeric * 1000);
+  return date.toLocaleString([], {
+    weekday: 'short',
+    hour: 'numeric',
+    minute: '2-digit'
+  });
+}
+
 function normalizeKeybindName(key) {
   if (typeof key !== 'string') return '';
   return key === ' ' ? 'space' : key.toLowerCase();
@@ -144,10 +187,13 @@ export default function App({ robotAddress }) {
   const [matchScheduleOpen, setMatchScheduleOpen] = useState(false);
   const [scheduleRows, setScheduleRows] = useState(() => readStoredMatchSchedule());
   const [scheduleSyncing, setScheduleSyncing] = useState(false);
-  const [scheduleSyncMenuOpen, setScheduleSyncMenuOpen] = useState(false);
   const [scheduleSyncProgress, setScheduleSyncProgress] = useState(0);
   const [scheduleError, setScheduleError] = useState('');
   const [scheduleNextMatch, setScheduleNextMatch] = useState(nextMatch ?? null);
+  const [scheduleHasSuccessfulSync, setScheduleHasSuccessfulSync] = useState(false);
+  const [preMatchBrief, setPreMatchBrief] = useState('');
+  const [preMatchBriefLoading, setPreMatchBriefLoading] = useState(false);
+  const [matchPreviewView, setMatchPreviewView] = useState('projections');
   const [currentEpochMs, setCurrentEpochMs] = useState(() => Date.now());
   const [backgroundSyncEnabled, setBackgroundSyncEnabled] = useState(() => readStoredBackgroundSyncEnabled());
   const [backgroundSyncEnabledDraft, setBackgroundSyncEnabledDraft] = useState(() => backgroundSyncEnabled);
@@ -168,6 +214,77 @@ export default function App({ robotAddress }) {
 
   // Driver tab: NT-configured tab to display during autonomous and teleop
   const [driverTabRaw] = useEntry('/ChronosDashboardMetadata/driverDashboard/tab', '');
+
+  // Next match hook: for usage by the sync function
+  const setNextMatchEntryHandler = (nextMatchToSend) => {
+    console.log("Setting next match")
+    console.log(nextMatchToSend)
+    if (nextMatchToSend?.alliances?.blue?.team_keys && nextMatchToSend?.alliances?.blue?.team_predictions) {
+      for (let i of nextMatchToSend.alliances.blue.team_keys) {
+        nt4Provider.setValue(`/ChronosDashboard/matches/nextMatch/blueAlliance/${i}/present`, true)
+      }
+      for (let i of nextMatchToSend.alliances.blue.team_predictions) {
+        nt4Provider.setValue(`/ChronosDashboard/matches/nextMatch/blueAlliance/${i.team}/epa/predicted_contribution`, i.epa.total_points)
+        nt4Provider.setValue(`/ChronosDashboard/matches/nextMatch/blueAlliance/${i.team}/epa/post_match_adjustment`, i.epa.post)
+        for (let k of Object.keys(i.epa.breakdown)) {
+          nt4Provider.setValue(`/ChronosDashboard/matches/nextMatch/blueAlliance/${i.team}/epa/breakdown/${k}`, i.epa.breakdown[k])
+        }
+      }
+    }
+    if (nextMatchToSend?.alliances?.red?.team_keys && nextMatchToSend?.alliances?.red?.team_predictions) {
+      for (let i of nextMatchToSend.alliances.red.team_keys) {
+        nt4Provider.setValue(`/ChronosDashboard/matches/nextMatch/redAlliance/${i}/present`, true)
+      }
+      for (let i of nextMatchToSend.alliances.red.team_predictions) {
+        nt4Provider.setValue(`/ChronosDashboard/matches/nextMatch/redAlliance/${i.team}/epa/predicted_contribution`, i.epa.total_points)
+        nt4Provider.setValue(`/ChronosDashboard/matches/nextMatch/redAlliance/${i.team}/epa/post_match_adjustment`, i.epa.post)
+        for (let k of Object.keys(i.epa.breakdown)) {
+          nt4Provider.setValue(`/ChronosDashboard/matches/nextMatch/redAlliance/${i.team}/epa/breakdown/${k}`, i.epa.breakdown[k])
+        }
+      }
+    }
+    if (nextMatchToSend?.pred) {
+      for (let i of Object.keys(nextMatchToSend.pred)) {
+        nt4Provider.setValue(`/ChronosDashboard/matches/nextMatch/prediction/${i}`, nextMatchToSend.pred[i])
+      }
+    }
+  }
+
+  const setNextMatchScheduleEntryHandler = (matchesToSend) => {
+    for (let nextMatchToSend of matchesToSend) {
+      if (nextMatchToSend?.alliances?.blue?.team_keys && nextMatchToSend?.alliances?.blue?.team_predictions) {
+        for (let i of nextMatchToSend.alliances.blue.team_keys) {
+          nt4Provider.setValue(`/ChronosDashboard/matches/${nextMatchToSend.key}/blueAlliance/${i}/present`, true)
+        }
+        for (let i of nextMatchToSend.alliances.blue.team_predictions) {
+          nt4Provider.setValue(`/ChronosDashboard/matches/${nextMatchToSend.key}/blueAlliance/${i.team}/epa/predicted_contribution`, i.epa.total_points)
+          nt4Provider.setValue(`/ChronosDashboard/matches/${nextMatchToSend.key}/blueAlliance/${i.team}/epa/post_match_adjustment`, i.epa.post)
+          for (let k of Object.keys(i.epa.breakdown)) {
+            nt4Provider.setValue(`/ChronosDashboard/matches/${nextMatchToSend.key}/blueAlliance/${i.team}/epa/breakdown/${k}`, i.epa.breakdown[k])
+          }
+        }
+      }
+      if (nextMatchToSend?.alliances?.red?.team_keys && nextMatchToSend?.alliances?.red?.team_predictions) {
+        for (let i of nextMatchToSend.alliances.red.team_keys) {
+          nt4Provider.setValue(`/ChronosDashboard/matches/${nextMatchToSend.key}/redAlliance/${i}/present`, true)
+        }
+        for (let i of nextMatchToSend.alliances.red.team_predictions) {
+          nt4Provider.setValue(`/ChronosDashboard/matches/${nextMatchToSend.key}/redAlliance/${i.team}/epa/predicted_contribution`, i.epa.total_points)
+          nt4Provider.setValue(`/ChronosDashboard/matches/${nextMatchToSend.key}/redAlliance/${i.team}/epa/post_match_adjustment`, i.epa.post)
+          for (let k of Object.keys(i.epa.breakdown)) {
+            nt4Provider.setValue(`/ChronosDashboard/matches/${nextMatchToSend.key}/redAlliance/${i.team}/epa/breakdown/${k}`, i.epa.breakdown[k])
+          }
+        }
+      }
+      if (nextMatchToSend?.pred) {
+        for (let i of Object.keys(nextMatchToSend.pred)) {
+          nt4Provider.setValue(`/ChronosDashboard/matches/${nextMatchToSend.key}/prediction/${i}`, nextMatchToSend.pred[i])
+        }
+      }
+    }
+  }
+
+
   const driverTabName = typeof driverTabRaw === 'string' && driverTabRaw.trim() ? driverTabRaw.trim() : null;
 
   const goToStage = (newStage) => setStage(newStage);
@@ -180,7 +297,6 @@ export default function App({ robotAddress }) {
   };
 
   const heldKeybindsRef = useRef(new Set());
-  const scheduleSyncMenuRef = useRef(null);
   const runScheduleSyncRef = useRef(null);
 
   const persistTeamNumber = (value) => {
@@ -225,18 +341,16 @@ export default function App({ robotAddress }) {
     setScheduleRows(latestSchedule);
     setScheduleNextMatch(nextMatch ?? null);
     setScheduleSyncProgress(normalizeSyncProgress(percentSyncComplete));
-    setScheduleSyncMenuOpen(false);
     setMatchScheduleOpen(true);
     setSidebarOpen(false);
   };
 
   const closeMatchSchedule = () => {
     if (scheduleSyncing) return;
-    setScheduleSyncMenuOpen(false);
     setMatchScheduleOpen(false);
   };
 
-  const runScheduleSync = async (mode = 'quick', options = {}) => {
+  const runScheduleSync = async (options = {}) => {
     if (scheduleSyncing) return;
 
     const source = options.source || 'manual';
@@ -244,7 +358,6 @@ export default function App({ robotAddress }) {
 
     setScheduleError('');
     setScheduleSyncing(true);
-    setScheduleSyncMenuOpen(false);
     setBackgroundSyncActive(isBackground);
     setScheduleSyncProgress(0);
 
@@ -255,23 +368,15 @@ export default function App({ robotAddress }) {
       setScheduleRows(Array.isArray(matchSchedule) ? [...matchSchedule] : []);
       setScheduleNextMatch(nextMatch ?? null);
     }, 120);
-    
+
 
     try {
-      if (mode === 'full') {
-        await sync(teamKey);
-      } else if (mode === 'predictions') {
-        await predSync(teamKey);
-      } else if (mode === 'times') {
-        await timeSync(teamKey);
-      } else {
-        await predSync(teamKey);
-        await timeSync(teamKey);
-      }
+      await sync(teamKey, setNextMatchEntryHandler, setNextMatchScheduleEntryHandler);
 
       const nextScheduleRows = Array.isArray(matchSchedule) ? [...matchSchedule] : [];
       setScheduleRows(nextScheduleRows);
       setScheduleNextMatch(nextMatch ?? null);
+      setScheduleHasSuccessfulSync(nextScheduleRows.length > 0);
       persistMatchSchedule(nextScheduleRows);
       setScheduleSyncProgress(normalizeSyncProgress(percentSyncComplete));
     } catch (error) {
@@ -326,34 +431,41 @@ export default function App({ robotAddress }) {
   }, [scheduleRows]);
 
   useEffect(() => {
-    if (!scheduleSyncMenuOpen) return;
+    const matchKey = typeof scheduleNextMatch?.key === 'string' ? scheduleNextMatch.key : '';
+    if (!scheduleHasSuccessfulSync || !matchKey || matchPreviewView !== 'brief') {
+      setPreMatchBrief('');
+      setPreMatchBriefLoading(false);
+      return undefined;
+    }
 
-    const handlePointerDown = (event) => {
-      if (!scheduleSyncMenuRef.current?.contains(event.target)) {
-        setScheduleSyncMenuOpen(false);
-      }
-    };
+    let cancelled = false;
+    setPreMatchBrief('');
+    setPreMatchBriefLoading(true);
 
-    const handleEscape = (event) => {
-      if (event.key === 'Escape') {
-        setScheduleSyncMenuOpen(false);
-      }
-    };
+    generatePreMatchBrief(matchKey, teamNumber)
+      .then((brief) => {
+        if (!cancelled) setPreMatchBrief(brief);
+      })
+      .catch((error) => {
+        // A schedule can come from the TBA fallback without Statbotics detail data.
+        console.warn('Unable to generate pre-match brief', error);
+        if (!cancelled) setPreMatchBrief('');
+      })
+      .finally(() => {
+        if (!cancelled) setPreMatchBriefLoading(false);
+      });
 
-    document.addEventListener('mousedown', handlePointerDown);
-    document.addEventListener('keydown', handleEscape);
     return () => {
-      document.removeEventListener('mousedown', handlePointerDown);
-      document.removeEventListener('keydown', handleEscape);
+      cancelled = true;
     };
-  }, [scheduleSyncMenuOpen]);
+  }, [scheduleHasSuccessfulSync, scheduleNextMatch?.key, teamNumber, matchPreviewView]);
 
   useEffect(() => {
     if (!backgroundSyncEnabled) return;
 
     const intervalMs = normalizeBackgroundSyncMinutes(backgroundSyncMinutes, 2) * 60 * 1000;
     const intervalId = window.setInterval(() => {
-      runScheduleSyncRef.current?.('times', { source: 'background' });
+      runScheduleSyncRef.current?.({ source: 'background' });
     }, intervalMs);
 
     return () => {
@@ -510,7 +622,7 @@ export default function App({ robotAddress }) {
     let unsubGlobalKey;
     if (window.electronAPI?.onGlobalKeyEvent) {
       unsubGlobalKey = window.electronAPI.onGlobalKeyEvent(({ type, key }) => {
-        const syntheticEvent = { key, preventDefault: () => {} };
+        const syntheticEvent = { key, preventDefault: () => { } };
         if (type === 'keydown') handleKeyDown(syntheticEvent);
         else if (type === 'keyup') handleKeyUp(syntheticEvent);
       });
@@ -540,16 +652,22 @@ export default function App({ robotAddress }) {
 
   const lightStyle = dashboardLightColor
     ? {
-        backgroundColor: dashboardLightColor,
-        backgroundImage: 'none',
-        transition: 'background-color 120ms linear',
-      }
+      backgroundColor: dashboardLightColor,
+      backgroundImage: 'none',
+      transition: 'background-color 120ms linear',
+    }
     : {
-        transition: 'background-color 120ms linear',
-      };
+      transition: 'background-color 120ms linear',
+    };
 
-  const predictedWins = scheduleRows.filter((match) => typeof match?.prediction === 'number' && match.prediction >= 0.5).length;
-  const predictedLosses = scheduleRows.filter((match) => typeof match?.prediction === 'number' && match.prediction < 0.5).length;
+  const predictedWins = scheduleRows.filter((match) => {
+    const probability = getMatchWinProbability(match, teamNumber);
+    return typeof probability === 'number' && probability >= 0.5;
+  }).length;
+  const predictedLosses = scheduleRows.filter((match) => {
+    const probability = getMatchWinProbability(match, teamNumber);
+    return typeof probability === 'number' && probability < 0.5;
+  }).length;
   const nowEpochSeconds = currentEpochMs / 1000;
   const nextMatchNumber = Number.parseInt(String(scheduleNextMatch?.match_number ?? ''), 10);
   const nextMatchKey = typeof scheduleNextMatch?.key === 'string' ? scheduleNextMatch.key : null;
@@ -569,6 +687,9 @@ export default function App({ robotAddress }) {
   const secondsUntilNextMatch = nextUpcomingMatch
     ? Math.max(0, Number(nextUpcomingMatch.predicted_time) - nowEpochSeconds)
     : null;
+  const showMatchPreview = scheduleHasSuccessfulSync
+    && scheduleRows.length > 0
+    && typeof scheduleNextMatch?.key === 'string';
 
   function renderStage() {
     // Non-Match tabs use the full widget-grid viewer.
@@ -706,44 +827,19 @@ export default function App({ robotAddress }) {
                 <h3 className="settings-modal-title">Match Schedule</h3>
                 <span className="schedule-winloss-summary">Predicted W-L: {predictedWins}-{predictedLosses}</span>
               </div>
-              <div className="schedule-modal-actions" ref={scheduleSyncMenuRef}>
+              <div className="schedule-modal-actions">
                 <div className="schedule-sync-group">
                   <button
                     type="button"
                     className="schedule-sync-main-btn"
-                    title="Refresh schedule predictions and start times"
-                    aria-label="Refresh schedule predictions and start times"
-                    onClick={() => runScheduleSync('quick')}
+                    title="Refresh match schedule"
+                    aria-label="Refresh match schedule"
+                    onClick={() => runScheduleSync()}
                     disabled={scheduleSyncing}
                   >
                     <IconRefreshCw size={15} />
                     <span>Sync</span>
                   </button>
-                  <button
-                    type="button"
-                    className="schedule-sync-menu-btn"
-                    title="More sync options"
-                    aria-label="More sync options"
-                    aria-haspopup="menu"
-                    aria-expanded={scheduleSyncMenuOpen}
-                    onClick={() => setScheduleSyncMenuOpen((open) => !open)}
-                    disabled={scheduleSyncing}
-                  >
-                    <span aria-hidden="true">▾</span>
-                  </button>
-                  {scheduleSyncMenuOpen && (
-                    <div className="schedule-sync-menu" role="menu">
-                      <button type="button" className="schedule-sync-menu-item" role="menuitem" onClick={() => runScheduleSync('full')}>
-                        Full schedule sync
-                      </button>
-                      <button type="button" className="schedule-sync-menu-item" role="menuitem" onClick={() => runScheduleSync('predictions')}>
-                        Refresh win predictions
-                      </button>
-                      <button type="button" className="schedule-sync-menu-item" role="menuitem" onClick={() => runScheduleSync('times')}>
-                        Refresh start times
-                      </button>
-                    </div>
-                  )}
                 </div>
                 <button type="button" className="schedule-close-btn" onClick={closeMatchSchedule} disabled={scheduleSyncing}>
                   &times;
@@ -773,6 +869,7 @@ export default function App({ robotAddress }) {
                 scheduleRows.map((match, matchIndex) => {
                   const redTeams = parseTeamNumbers(match?.alliances?.red?.team_keys);
                   const blueTeams = parseTeamNumbers(match?.alliances?.blue?.team_keys);
+                  const matchWinProbability = getMatchWinProbability(match, teamNumber);
                   const currentMatchNumber = Number.parseInt(String(match?.match_number ?? ''), 10);
                   const predictedTime = Number(match?.predicted_time);
                   const matchOccurred = Number.isFinite(predictedTime)
@@ -793,12 +890,12 @@ export default function App({ robotAddress }) {
                           {matchOccurred && <span className="schedule-item-status occurred">Occurred</span>}
                         </div>
                         <span
-                          className={`schedule-item-prediction ${typeof match.prediction === 'number' && match.prediction < 0.5 ? 'loss' : 'win'}`}
+                          className={`schedule-item-prediction ${typeof matchWinProbability === 'number' && matchWinProbability < 0.5 ? 'loss' : 'win'}`}
                         >
-                          {typeof match.prediction === 'number' ? `${(match.prediction * 100).toFixed(1)}%` : '--'}
+                          {typeof matchWinProbability === 'number' ? `${(matchWinProbability * 100).toFixed(1)}%` : '--'}
                         </span>
                       </div>
-                      <span className="schedule-item-time">{match.predicted_day_time}</span>
+                      <span className="schedule-item-time">{formatPredictedDayTime(match?.predicted_time ?? match?.time)}</span>
                       <div className="schedule-item-alliances">
                         <div className="schedule-item-alliance schedule-item-alliance-red">
                           <span className="schedule-item-alliance-label">Red</span>
@@ -838,7 +935,7 @@ export default function App({ robotAddress }) {
       {backgroundSyncActive && (
         <div className="background-sync-indicator" role="status" aria-live="polite">
           <IconRefreshCw size={14} />
-          <span>Refreshing match times {Math.round(scheduleSyncProgress)}%</span>
+          <span>Refreshing schedule {Math.round(scheduleSyncProgress)}%</span>
         </div>
       )}
       {scheduleRows.length > 0 && (
@@ -855,6 +952,16 @@ export default function App({ robotAddress }) {
             </>
           )}
         </div>
+      )}
+      {activeTab === 'Match' && showMatchPreview && (
+        <MatchPreviewMenu
+          match={scheduleNextMatch}
+          view={matchPreviewView}
+          onViewChange={setMatchPreviewView}
+          brief={preMatchBrief}
+          briefLoading={preMatchBriefLoading}
+          formatTime={formatPredictedDayTime}
+        />
       )}
       <DownloadMenu autoRoutines={autoRoutines} currentLog={currentLog} />
       <AlertsOverlay />
