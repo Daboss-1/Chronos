@@ -7,7 +7,7 @@ const TBA_API_BASE_URL = 'https://www.thebluealliance.com/api/v3';
 const TBA_AUTH_KEY = 'KGSCksKxS2Z5m3DMlj0DaEjzW7hphTOnAkEhAzJj5lBDEiheTNB9Stw2akjIgGDX';
 async function getTeamEventKey(teamNumber) {
     var closestKey = null;
-    var now = new Date(1776359580000).getTime();
+    var now = new Date().getTime();
     await fetch(`https://www.thebluealliance.com/api/v3/team/frc${teamNumber}/events`, {
         method: 'GET',
         headers: {
@@ -37,7 +37,7 @@ async function getTeamEventMatchSchedule(teamNumber, eventKey) {
     for (let i = 0; i < BASE_API_URLS.length; i++) {
         try {
             const response = await fetch(
-                `${BASE_API_URLS[i]}/matches?team=${teamNumber}&year=${Number.isFinite(year) ? year : new Date(1776359580000).getFullYear()}&event=${encodeURIComponent(eventKey)}&metric=match_number&ascending=true`,
+                `${BASE_API_URLS[i]}/matches?team=${teamNumber}&year=${Number.isFinite(year) ? year : new Date().getFullYear()}&event=${encodeURIComponent(eventKey)}&metric=match_number&ascending=true`,
                 { method: 'GET' }
             );
 
@@ -200,7 +200,7 @@ function setNextMatchViaTime(listMatches) {
         return nextMatch;
     }
 
-    let now = new Date(1776359580000).getTime() / 1000;
+    let now = new Date().getTime() / 1000;
     nextMatch = null;
     let closestPositiveDistance = Number.POSITIVE_INFINITY;
     for (let i = 0; i < listMatches.length; i++) {
